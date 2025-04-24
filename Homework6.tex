@@ -1,0 +1,89 @@
+\documentclass[10pt,a4paper]{article}
+\linespread{1.1}
+% layout/typography
+\usepackage[hmargin=2.75cm,vmargin=3cm]{geometry}
+\usepackage[english]{babel} % use Dutch hyphenation etc.
+\usepackage{parskip}         % don't indent paragraphs and leave vertical space instead
+\usepackage[T1]{fontenc}  % make accented work properly in pdf
+\renewcommand{\thefootnote}{\fnsymbol{footnote}} % use symbols for footnotes
+
+% math stuff
+\usepackage{amssymb,amsmath,amsthm,dsfont,hyperref}
+
+% set up alternative commands to allow for easy adaptation to the notation of the textbook.
+\newcommand{\sub}{\subset}           % new command to refer to standard notation \subset for standard subset (which might be equal)
+\newcommand{\subneq}{\subsetneq} % new command to refer to standard notation \subsetneq for proper subset (not allowed to be equal)
+% Uncomment the lines below to use the notation of the textbook
+%    Comment the lines below to use more common notations (for (proper) subsets, negation and set difference)
+\renewcommand{\sub}{\subseteq}      % use \subseteq instead of \subset for standard subset (which might be equal)
+%\renewcommand{\subneq}{\subset} % use \subset instead of \subsetneq for proper subset (which is not allowed to be equal)
+%\renewcommand{\setminus}{-}        % use - instead of \ for relative complement of sets
+%\renewcommand{\neg}{{\sim}}       % use ~ as negation symbol
+
+% misc.
+\usepackage{enumitem} % for the [resume] option
+\renewcommand{\theenumi}{\alph{enumi}}
+\renewcommand{\theenumii}{\roman{enumii}}
+
+\usepackage{graphicx,caption}
+\usepackage{threeparttable}
+\captionsetup{labelfont = sc, textfont = it}
+
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+	\hskip -\arraycolsep
+	\let\@ifnextchar\new@ifnextchar
+	\array{#1}}
+
+\newcommand{\norm}[1]{\lvert\lvert #1 \rvert\rvert}
+
+\usepackage{tikz,xcolor}
+\usepackage{ upgreek }
+
+
+\def\point[#1]{
+	\draw (#1) node[fill=black,thick,circle,minimum size=2.2pt,inner sep=0pt,outer sep=0pt] {};
+	\draw (#1) node[fill=white,semithick,circle,minimum size=1pt,inner sep=0pt,outer sep=0pt] {};
+}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\x}{\textbf{x}}
+\newcommand{\y}{\textbf{y}}
+\newcommand{\0}{\textbf{0}}
+\renewcommand{\l}{\langle}
+\renewcommand{\r}{\rangle}
+\renewcommand{\v}{\textbf{v}}
+\newcommand{\z}{\textbf{z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\renewcommand{\P}{\mathbb{P}}
+\renewcommand{\O}{\mathcal{O}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\A}{\mathbb{A}}
+\renewcommand{\a}{\alpha}
+\renewcommand{\b}{\beta}
+\newcommand{\e}{\varepsilon}
+\newcommand{\p}{\varphi}
+\renewcommand{\d}[2]{\frac{d#1}{d#2}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newcommand{\aaa}{(a_1:\cdots:a_r)}
+\newcommand{\bbb}{(b_1:\cdots:b_s)}
+\newcommand{\ab}{(a_1b_1:a_1b_2:\cdots:a_rb_s)}
+\renewcommand{\Pr}{\P^{r-1}}
+\newcommand{\Ps}{\P^{s-1}}
+
+
+
+\def\subto{\mathrel{\vcenter{\hbox{\scalebox{.6}{$\supset$}}}\kern-.4em\to}}
+\usepackage{lmodern} 
+
+
+\begin{document}
+\section*{\vspace{-1.5cm}\begin{center}\normalsize\normalfont{Homework 6, Formal Methods in Mathematics\\University Utrecht, \today\\AKS primality group}\end{center}}
+\vspace{-\baselineskip}\noindent \rule{\textwidth}{0.025cm}\vspace{\parskip}
+For the final project, we would like to explore the AKS primality test in Lean.
+\end{document}
