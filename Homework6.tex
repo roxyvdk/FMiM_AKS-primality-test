@@ -101,13 +101,13 @@
 	\section*{Project goals}
 	We need to define the algorithm in Lean. We think the best way to implement it, is by defining a function that takes in an integer $n>1$ and gives an output `PRIME' or `COMPOSITE', following the algorithm.
 	Our main goal is proving the statement \textit{The AKS primality algorithm returns `PRIME' if and only if $n$ is prime}.
-	For this, we will use the definitions, lemmas and theorems as described in PRIMES is in P \cite{PRIMES in P}. This means that we need to implement
+	For this, we will use the definitions, lemmas and theorems as described in PRIMES is in P \cite{PRIMES in P}. This means that we need to implement the following, all found in \cite{PRIMES in P}:
 	\begin{itemize}
-		\item Lemma 2.1
-		\item Theorem 4.1
-		\item Lemma 4.2
-		\item Lemma 4.3
-		\item Definition 4.4
+		\item Lemma 2.1: Let $a\in\Z$, $n\in\N$, $n\geq2$ and $(a,n)=1$. Then $n$ is prime if and only if $(X+a)^n=X^n+a \ (\text{mod } n)$.
+		\item Theorem 4.1: The AKS algorithm returns `PRIME' if and only if $n$ is prime.
+		\item Lemma 4.2: If $n$ is prime, the AKS algorithm returns `PRIME'.
+		\item Lemma 4.3: There exists an $r\leq \max\{3,\left\lceil \log^5n\right\rceil\}$ such that $o_r(n)>\log^2n$.
+		\item Definition 4.4: For a polynomial $f(X)$ and number $m\in\N$, we say that $m$ is introspective for $f(X)$ if $f(X)^m=f(X^m)\ (\text{mod } X^r-1,p)$.
 		\item Lemma 4.5: If $m$ and $m′$ are introspective numbers for $f (X)$ then so is $m \cdot m′$.
 		\item Lemma 4.6: If $m$ is introspective for $f(X)$ and $g(X)$ then it is also introspective for $f (X) \cdot g(X)$.
 		\item Lemma 4.7: $|\mathcal{G}| \ge {t+l \choose t-1} $.
@@ -122,75 +122,75 @@
 	
 	
 	\section*{First definitions and theorem statements in Lean}
- 	We have implemented the AKS algorithm described in the paper (\texttt{AKS_algorithm}), and the definitions that this needs. We have also given the theorem and lemma statements of the main results we are aiming to prove.
+	We have implemented the AKS algorithm described in the paper (\texttt{AKS\_algorithm}), and the definitions that this needs. We have also given the theorem and lemma statements of the main results we are aiming to prove.
+	
 	\begin{lstlisting}[
 		frame=single,
 		numbers=left]
 		import Mathlib
-
+		
 		open Polynomial
 		open Finset
 		
 		inductive AKS_Output where
-		  | PRIME : AKS_Output
-		  | COMPOSITE : AKS_Output
+		| PRIME : AKS_Output
+		| COMPOSITE : AKS_Output
 		
 		export AKS_Output (PRIME COMPOSITE)
 		
 		def perfect_power (n : ℕ) : Prop :=
-		  ∃ (a b : ℕ), b > 1 ∧ n = a ^ b
+			∃ (a b : ℕ), b > 1 ∧ n = a ^ b
 		
 		instance {n : ℕ} : Decidable (perfect_power n) := by
-		  sorry
+			sorry
 		
 		def o_r (r n : ℕ) (h : gcd r n = 1): ℕ :=
-		  -- the order of n in (ℤ/rℤ)ˣ
-		  sorry
+		-- the order of n in (ℤ/rℤ)ˣ
+			sorry
 		
 		def o_r' (r n : ℕ) : ℕ :=
-		  if h : gcd r n = 1 then
-			o_r r n h
-		  else
-			0
+			if h : gcd r n = 1 then
+				o_r r n h
+			else
+				0
 		
 		noncomputable
 		def smallest_r (n : ℕ) : ℕ :=
-		  sInf {r : ℕ | o_r' r n > (Real.log n) ^ 2}
+			sInf {r : ℕ | o_r' r n > (Real.log n) ^ 2}
 		
 		def is_not_coprime_in_range (r n : ℕ) : Prop :=
-		  ∃ a : ℕ, a ≤ r ∧ 1 < gcd a n ∧ gcd a n < n
+			∃ a : ℕ, a ≤ r ∧ 1 < gcd a n ∧ gcd a n < n
 		
 		instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := by
-		  sorry
+			sorry
 		
 		def polynomial_equality (r n a : ℕ) : Prop :=
-		  (((X + C (a : ℤ))^n : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (n : ℤ)} : Set ℤ[X])) = (X^n + C (a : ℤ) : ℤ[X])
+			(((X + C (a : ℤ))^n : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (n : ℤ)} : Set ℤ[X])) = (X^n + C (a : ℤ) : ℤ[X])
 		
 		def step_5_false (r n : ℕ) : Prop :=
-		  ∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * Real.log n) ∧ ¬polynomial_equality r n a
+			∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * Real.log n) ∧ ¬polynomial_equality r n a
 		
 		instance {r n : ℕ} : Decidable (step_5_false r n) := by
-		  sorry
+			sorry
 		
 		noncomputable
 		def AKS_algorithm {n: ℕ} (ngt1 : 1 < n) : AKS_Output :=
-		  if perfect_power n ∨ is_not_coprime_in_range (smallest_r n) n ∨ (smallest_r n < n ∧ step_5_false (smallest_r n) n) then
-			COMPOSITE
-		  else
-			PRIME
+			if perfect_power n ∨ is_not_coprime_in_range (smallest_r n) n ∨ (smallest_r n < n ∧ step_5_false (smallest_r n) n) then
+				COMPOSITE
+			else
+				PRIME
 		
 		lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
-		  sorry
+			sorry
 		
 		lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : Nat.Prime n → AKS_algorithm ngt1 = PRIME := sorry
 		
 		lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm ngt1 = PRIME → Nat.Prime n := sorry
 		
 		theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm ngt1 = PRIME := by
-		  constructor
-		  exact lemma_4_2 n ngt1
-		  exact lemma_4_9 n ngt1
-					
+			constructor
+			exact lemma_4_2 n ngt1
+			exact lemma_4_9 n ngt1
 	\end{lstlisting}
 	
 	
