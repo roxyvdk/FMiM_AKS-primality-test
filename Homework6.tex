@@ -104,11 +104,12 @@
 	For this, we will use the definitions, lemmas and theorems as described in PRIMES is in P \cite{PRIMES in P}. This means that we need to implement the following, all found in \cite{PRIMES in P}:
 	\begin{itemize}
 		\item Lemma 2.1: Let $a\in\Z$, $n\in\N$, $n\geq2$ and $(a,n)=1$. Then $n$ is prime if and only if $(X+a)^n=X^n+a \ (\text{mod } n)$.
+  		\item Lemma 3.1 Let $LCM(m)$ denote the lcm of first $m$ numbers. For $m \ge 7,\ LCM(m) \ge 2^m$.
 		\item Theorem 4.1: The AKS algorithm returns `PRIME' if and only if $n$ is prime.
 		\item Lemma 4.2: If $n$ is prime, the AKS algorithm returns `PRIME'.
 		\item Lemma 4.3: There exists an $r\leq \max\{3,\left\lceil \log^5n\right\rceil\}$ such that $o_r(n)>\log^2n$.
 		\item Definition 4.4: For a polynomial $f(X)$ and number $m\in\N$, we say that $m$ is introspective for $f(X)$ if $f(X)^m=f(X^m)\ (\text{mod } X^r-1,p)$.
-		\item Lemma 4.5: If $m$ and $m′$ are introspective numbers for $f (X)$ then so is $m \cdot m′$.
+		\item Lemma 4.5: If $m$ and $m'$ are introspective numbers for $f (X)$ then so is $m \cdot m'$.
 		\item Lemma 4.6: If $m$ is introspective for $f(X)$ and $g(X)$ then it is also introspective for $f (X) \cdot g(X)$.
 		\item Lemma 4.7: $|\mathcal{G}| \ge {t+l \choose t-1} $.
 		\item Lemma 4.8: If $n$ is not a power of $p$ then $|\mathcal{G}|\le n^{\sqrt t}$.
