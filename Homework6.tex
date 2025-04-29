@@ -103,8 +103,8 @@
 	If we have enough time left, we also want to look into proving the time complexity of this algorithm.
 
 	
-	We need to define the algorithm in Lean. We think the best way to implement it, is by defining a function that takes in an integers $n$ and gives an output `prime' or `composite', following the algorithm.
-	Our main goal is proving the statement 	\textit{The AKS primality algorithm returns `prime' if and only if $n$ is prime}.
+	We need to define the algorithm in Lean. We think the best way to implement it, is by defining a function that takes in an integer $n>1$ and gives an output `PRIME' or `COMPOSITE', following the algorithm.
+	Our main goal is proving the statement \textit{The AKS primality algorithm returns `PRIME' if and only if $n$ is prime}.
 	For this, we will use the definitions, lemmas and theorems as described in PRIMES in P \cite{PRIMES in P}. This means that we need to implement
 	\begin{itemize}
 		\item Lemma 2.1
@@ -118,6 +118,9 @@
 		\item Lemma 4.8
 		\item Lemma 4.9
 	\end{itemize}
+	
+	For the initial division of labour, we decided that we want to define the algorithm together, such that we all know how the most important part of our project is defined.
+	After that, we can easily formalize the theorem statement together, again to all have clear what we are working with.
 	
 	Together: define algorithm + AKS theorem statement
 	Individual labour??
