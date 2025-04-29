@@ -1,6 +1,7 @@
 import Mathlib
 
 open Polynomial
+open Finset
 
 inductive AKS_Output where
   | PRIME : AKS_Output
