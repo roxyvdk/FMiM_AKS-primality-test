@@ -26,7 +26,7 @@ def o_r' (r n : ℕ) : ℕ :=
 
 noncomputable
 def smallest_r (n : ℕ) : ℕ :=
-  sInf {r : ℕ | o_r' r n > Real.log (Real.log n)}
+  sInf {r : ℕ | o_r' r n > (Real.log n) ^ 2}
 
 def is_not_coprime_in_range (r n : ℕ) : Prop :=
   ∃ a : ℕ, a ≤ r ∧ 1 < gcd a n ∧ gcd a n < n
