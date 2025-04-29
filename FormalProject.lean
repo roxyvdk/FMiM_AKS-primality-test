@@ -15,12 +15,14 @@ def perfect_power (n : ℕ) : Prop :=
 instance {n : ℕ} : Decidable (perfect_power n) := by
   sorry
 
-def o_r (r n : ℕ) (h : gcd r n = 1): ℕ :=
+noncomputable
+def o_r (r n : ℕ) (h : n.gcd r = 1): ℕ :=
   -- the order of n in (ℤ/rℤ)ˣ
-  sorry
+  orderOf (ZMod.unitOfCoprime n h : (ZMod r)ˣ)
 
+noncomputable
 def o_r' (r n : ℕ) : ℕ :=
-  if h : gcd r n = 1 then
+  if h : gcd n r = 1 then
     o_r r n h
   else
     0
