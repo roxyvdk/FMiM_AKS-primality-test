@@ -50,5 +50,11 @@ def AKS_algorithm {n: ℕ} (ngt1 : 1 < n) : AKS_Output :=
   else
     PRIME
 
+lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : Nat.Prime n → AKS_algorithm ngt1 = PRIME := sorry
+
+lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm ngt1 = PRIME → Nat.Prime n := sorry
+
 theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm ngt1 = PRIME := by
-  sorry
+  constructor
+  exact lemma_4_2 n ngt1
+  exact lemma_4_9 n ngt1
