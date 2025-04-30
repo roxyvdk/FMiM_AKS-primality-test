@@ -58,7 +58,7 @@ lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := 
 
 lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : Nat.Prime n → AKS_algorithm ngt1 = PRIME := sorry
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
-    ∃ r : ℕ, r ≤ max 3 ⌈(log n)^5⌉₊ ∧ multiplicativeOrder n r > (Real.logb 2 n)^2 := sorry
+    ∃ r : ℕ, r ≤ max 3 ⌈(Real.logb 2 n)^5⌉₊ ∧ multiplicativeOrder n r > (Real.logb 2 n)^2 := sorry
 lemma lemma_4_5
 lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm ngt1 = PRIME → Nat.Prime n := sorry
 
