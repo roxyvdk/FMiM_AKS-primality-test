@@ -29,7 +29,7 @@ def o_r' (r n : ℕ) : ℕ :=
 
 noncomputable
 def smallest_r (n : ℕ) : ℕ :=
-  sInf {r : ℕ | o_r' r n > (Real.log n) ^ 2}
+  sInf {r : ℕ | o_r' r n > (Real.logb 2 n) ^ 2}
 
 def is_not_coprime_in_range (r n : ℕ) : Prop :=
   ∃ a : ℕ, a ≤ r ∧ 1 < gcd a n ∧ gcd a n < n
@@ -41,7 +41,7 @@ def polynomial_equality (r n a : ℕ) : Prop :=
   (((X + C (a : ℤ))^n : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (n : ℤ)} : Set ℤ[X])) = (X^n + C (a : ℤ) : ℤ[X])
 
 def step_5_false (r n : ℕ) : Prop :=
-  ∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * Real.log n) ∧ ¬polynomial_equality r n a
+  ∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * Real.logb 2 n) ∧ ¬polynomial_equality r n a
 
 instance {r n : ℕ} : Decidable (step_5_false r n) := by
   sorry
