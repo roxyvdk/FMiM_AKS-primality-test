@@ -22,7 +22,7 @@ def o_r (r n : ℕ) (h : n.gcd r = 1): ℕ :=
 
 noncomputable
 def o_r' (r n : ℕ) : ℕ :=
-  if h : gcd n r = 1 then
+  if h : n.gcd r = 1 then
     o_r r n h
   else
     0
@@ -32,7 +32,7 @@ def smallest_r (n : ℕ) : ℕ :=
   sInf {r : ℕ | o_r' r n > (Real.logb 2 n) ^ 2}
 
 def is_not_coprime_in_range (r n : ℕ) : Prop :=
-  ∃ a : ℕ, a ≤ r ∧ 1 < gcd a n ∧ gcd a n < n
+  ∃ a : ℕ, a ≤ r ∧ 1 < n.gcd a ∧ n.gcd a < n
 
 instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := by
   sorry
@@ -56,10 +56,68 @@ def AKS_algorithm {n: ℕ} (ngt1 : 1 < n) : AKS_Output :=
 lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
   sorry
 
-lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : Nat.Prime n → AKS_algorithm ngt1 = PRIME := sorry
+lemma sublem_4_2_1 (n : ℕ) : n.prime → ¬ perfect_power n := by
+  intro hp hpow
+  unfold perfect_power at hpow
+  rcases hpow with ⟨a, h₁⟩
+  rcases h₁ with ⟨b, h₂⟩
+  rcases h₂ with ⟨hb, hnpow⟩
+  have bdivfact : ∀ c, b ∣ n.factorization c:= by
+    intro c
+    rw [hnpow, Nat.factorization_pow]
+    norm_num
+  have : n.factorization n = 1 := by
+    rw [hp.factorization]
+    simp
+  have bdiv1: b ∣ 1 := by
+    rw [← this]
+    exact bdivfact n
+  have : b = 1 := by
+    simp at bdiv1
+    exact bdiv1
+  linarith
+
+lemma sublem_4_2_2 (n : ℕ) : n.Prime → ¬ is_not_coprime_in_range (smallest_r n) n := by
+  intro hp
+  intro hcop
+  unfold is_not_coprime_in_range at hcop
+  rcases hcop with ⟨a,h₁⟩
+  rcases h₁ with ⟨_,h₂⟩
+  rcases h₂ with ⟨hgt1, hltn⟩
+
+  have : n.gcd a = 1 := by
+    have : ¬  n ∣ a := by
+      intro ndiva
+      have : n.gcd a = n := by exact Nat.gcd_eq_left ndiva
+      linarith
+    exact (Nat.Prime.coprime_iff_not_dvd hp).mpr this
+  linarith
+
+lemma sublem_4_2_3 (n : ℕ) : n.Prime → smallest_r n < n → ¬ step_5_false (smallest_r n) n := by
+  unfold step_5_false
+  intro hp hrbound hineq
+  rcases hineq with ⟨a,ha⟩
+  rcases ha with ⟨anonneg,hb⟩
+  rcases hb with ⟨aupperb,ineq⟩
+  -- have that polynomial_equality holds since n is prime (by lemma 2.1)
+  -- linarith
+  sorry
+
+lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : n.Prime → AKS_algorithm ngt1 = PRIME := by
+  intro hp
+  unfold AKS_algorithm
+  apply if_neg
+  rw [or_iff_not_and_not]
+  simp
+  constructor
+  · exact sublem_4_2_1 n hp
+  · constructor
+    · exact sublem_4_2_2 n hp
+    · exact sublem_4_2_3 n hp
+
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
     ∃ r : ℕ, r ≤ max 3 ⌈(Real.logb 2 n)^5⌉₊ ∧ multiplicativeOrder n r > (Real.logb 2 n)^2 := sorry
-lemma lemma_4_5
+--lemma lemma_4_5
 lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm ngt1 = PRIME → Nat.Prime n := sorry
 
 theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm ngt1 = PRIME := by
