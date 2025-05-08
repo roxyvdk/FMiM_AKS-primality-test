@@ -129,6 +129,7 @@ theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm ngt1 = 
 
 namespace Lemma78
 
+open Real
 -- `p` is a prime divisor of `n` such that `o_r(p) > 1` (also `p > r` and `gcd(n, r) = 1`)
 --
 noncomputable
