@@ -117,7 +117,63 @@ lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : n.Prime → AKS_algorithm ngt1 = PRIM
 
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
     ∃ r : ℕ, r ≤ max 3 ⌈(Real.logb 2 n)^5⌉₊ ∧ multiplicativeOrder n r > (Real.logb 2 n)^2 := sorry
---lemma lemma_4_5
+
+def introspective (m r p: ℕ) (f : ℤ[X]) : Prop :=
+    ((f ^ m : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (p : ℤ)} : Set ℤ[X]))
+        = (f.comp (Polynomial.X ^ m) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (p : ℤ)} : Set ℤ[X]))
+
+lemma quot_prod (f g q r : ℤ[X]) (p : ℕ) (_ : Nat.Prime p) (q_dvd_r : q ∣ r) :
+  ((f : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({r, C (p : ℤ)} : Set ℤ[X])) = (g : ℤ[X]) → ((f : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({q, C (p : ℤ)} : Set ℤ[X])) = (g : ℤ[X]) := by
+  intro hr
+  rw [Ideal.Quotient.eq] at *
+  rw [Ideal.mem_span_pair] at *
+  rw [dvd_def] at q_dvd_r
+  obtain ⟨c, q_dvd_r⟩ := q_dvd_r
+  obtain ⟨a,b,hr⟩ := hr
+  rw [q_dvd_r, mul_comm q c, ← mul_assoc] at hr
+  use (a * c), b
+
+lemma introspec_pow (m r p : ℕ) (f : ℤ[X]) : (introspective m r p f) → ∀ q : ℕ,
+  (((f.comp (Polynomial.X ^ q))^ m : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^(q*r) - 1, C (p : ℤ)} : Set ℤ[X]))
+    = (f.comp (Polynomial.X ^ (m*q)) : ℤ[X]) := by
+  intro hm q
+  unfold introspective at *
+  rw [pow_mul, mul_comm, pow_mul]
+  sorry
+
+lemma lemma_4_5 (m m' r p : ℕ) (pprime : Nat.Prime p) (f : ℤ[X]) (hm : introspective m r p f) (hm' : introspective m' r p f) : introspective (m * m') r p f := by
+  have hmm' : ((f.comp (Polynomial.X ^ m) ^ m' : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^(m * r) - 1, C (p : ℤ)} : Set ℤ[X]))
+      = (f.comp (Polynomial.X ^ (m' * m) : ℤ[X])) := by
+      simp at *
+      exact introspec_pow m' r p f hm' m
+  unfold introspective at *
+  simp at *
+  rw [pow_mul,hm]
+  have xr_dvd_xmr : ((X ^ r + C (-1 : ℤ)) : ℤ[X]) ∣ ((X^(m * r) + C (-1 : ℤ)) : ℤ[X]) := by
+    let f : ℤ[X] := X ^ r - 1
+    let g : ℤ[X] := ∑ i ∈ Finset.range m, X ^ (i * r)
+    have : f * g = X ^ (m * r) + C (-1) := by
+      simp only [f, g, ← C_1, ← sub_eq_add_neg]
+      have : (∑ i ∈ Finset.range m, (X : ℤ[X]) ^ (i * r)) = (∑ i ∈ Finset.range m, (X ^ r) ^ i) := by
+        apply Finset.sum_congr rfl
+        intro i hi
+        rw [pow_mul]
+        ring
+      simp
+      rw [this, mul_geom_sum, ← pow_mul, mul_comm]
+      simp [Mathlib.Tactic.RingNF.add_neg]
+    use g
+    simp [Mathlib.Tactic.RingNF.add_neg] at *
+    rw [← this]
+  simp [Mathlib.Tactic.RingNF.add_neg] at xr_dvd_xmr
+  apply quot_prod _ _ _ _ p pprime xr_dvd_xmr at hmm'
+  rw [mul_comm m m']
+  simp [← hmm']
+
+lemma lemma_4_6 (m r p : ℕ) (_ : Nat.Prime p) (f g : ℤ[X]) (hmf : introspective m r p f) (hmg : introspective m r p g) : introspective m r p (f * g) := by
+  unfold introspective at *
+  simp [mul_pow, ← hmf, ← hmg]
+
 lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm ngt1 = PRIME → Nat.Prime n := sorry
 
 theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm ngt1 = PRIME := by
@@ -220,4 +276,3 @@ lemma lemma_4_8 (r n p : ℕ) (p_prime : p.Prime) (rgt0 : 0 < r) (hrp : 1 < o_r'
   sorry
 
 end Lemma78
-
