@@ -13,30 +13,25 @@ export AKS_Output (PRIME COMPOSITE)
 def perfect_power (n : ℕ) : Prop :=
   ∃ (a b : ℕ), b > 1 ∧ n = a ^ b
 
+noncomputable
 instance {n : ℕ} : Decidable (perfect_power n) := by
-  sorry
+  apply Classical.propDecidable
 
 noncomputable
-def o_r (r n : ℕ) (h : n.gcd r = 1): ℕ :=
+def oᵣ (r n : ℕ) : ℕ :=
   -- the order of n in (ℤ/rℤ)ˣ
-  orderOf (ZMod.unitOfCoprime n h : (ZMod r)ˣ)
-
-noncomputable
-def o_r' (r n : ℕ) : ℕ :=
-  if h : n.gcd r = 1 then
-    o_r r n h
-  else
-    0
+  orderOf (n : ZMod r)
 
 noncomputable
 def smallest_r (n : ℕ) : ℕ :=
-  sInf {r : ℕ | o_r' r n > (logb 2 n) ^ 2}
+  sInf {r : ℕ | oᵣ r n > (logb 2 n) ^ 2}
 
 def is_not_coprime_in_range (r n : ℕ) : Prop :=
   ∃ a : ℕ, a ≤ r ∧ 1 < n.gcd a ∧ n.gcd a < n
 
+noncomputable
 instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := by
-  sorry
+  apply Classical.propDecidable
 
 def polynomial_equality (r n a : ℕ) : Prop :=
   (((X + C (a : ℤ))^n : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (n : ℤ)} : Set ℤ[X])) = (X^n + C (a : ℤ) : ℤ[X])
@@ -44,8 +39,9 @@ def polynomial_equality (r n a : ℕ) : Prop :=
 def step_5_false (r n : ℕ) : Prop :=
   ∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * logb 2 n) ∧ ¬polynomial_equality r n a
 
+noncomputable
 instance {r n : ℕ} : Decidable (step_5_false r n) := by
-  sorry
+  apply Classical.propDecidable
 
 noncomputable
 def AKS_algorithm {n: ℕ} (ngt1 : 1 < n) : AKS_Output :=
@@ -117,7 +113,7 @@ lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : n.Prime → AKS_algorithm ngt1 = PRIM
     · exact sublem_4_2_3 n hp
 
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
-    ∃ r : ℕ, r ≤ max 3 ⌈(Real.logb 2 n)^5⌉₊ ∧ multiplicativeOrder n r > (logb 2 n)^2 := sorry
+    ∃ r : ℕ, r ≤ max 3 ⌈(logb 2 n)^5⌉₊ ∧ oᵣ r n > (logb 2 n)^2 := sorry
 
 def introspective (m r p: ℕ) (f : ℤ[X]) : Prop :=
     ((f ^ m : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (p : ℤ)} : Set ℤ[X]))
@@ -191,11 +187,10 @@ structure Step5Assumptions where
   n : ℕ
   p : ℕ
   rgt0 : 0 < r
-  hrp : 1 < o_r' r p
+  hrp : 1 < oᵣ r p
   hn : n.gcd r = 1
   pgtr : r < p
   p_prime : p.Prime
-  -- pf : Fact p.Prime
   hp : p.gcd r = 1
 
 section
@@ -221,7 +216,10 @@ def ell : ℕ :=
   Nat.floor (Real.sqrt sa.r.totient * logb 2 sa.n)
 
 lemma deg_cyclotomic_factor_eq_order {g : (ZMod sa.p)[X]} (hg : Irreducible g ∧ g ∣ q_r sa) :
-    g.degree = o_r' sa.r sa.p := by
+    g.degree = oᵣ sa.r sa.p := by
+  have h₁ : sa.p ^ (oᵣ sa.r sa.p) ≡ 1 [MOD sa.r] := by
+    unfold oᵣ
+    sorry
   -- apply (degree_eq_iff_natDegree_eq_of_pos (Nat.zero_lt_of_lt hr)).mpr
   sorry
 
@@ -262,21 +260,21 @@ lemma x_plus_a_is_unit (a : ℕ) [Fact (Nat.Prime sa.p)] :
       _ ≤ 1 := by exact_mod_cast deg_le_one
   contradiction
 
-def normal_g : Subgroup (ZMod sa.r)ˣ :=
+def G : Subgroup (ZMod sa.r)ˣ :=
   Subgroup.closure {ZMod.unitOfCoprime sa.n sa.hn, ZMod.unitOfCoprime sa.p sa.hp}
 
 noncomputable
-def t_def : ℕ := Nat.card (normal_g sa)
+def t_def : ℕ := Nat.card (G sa)
 
 lemma t_gt_zero : 0 < t_def sa := Nat.card_pos
 
 noncomputable
-def big_g [Fact (Nat.Prime sa.p)] : Subgroup (AdjoinRoot (h_def sa))ˣ :=
+def 𝒢' [Fact (Nat.Prime sa.p)] : Subgroup (AdjoinRoot (h_def sa))ˣ :=
   Subgroup.closure ((fun (i : ℕ) => (IsUnit.unit' (x_plus_a_is_unit sa i) : (AdjoinRoot (h_def sa))ˣ))'' (range (ell sa)))
 
 noncomputable
-def big_g' :=
-  @big_g sa ⟨sa.p_prime⟩
+def 𝒢 :=
+  @𝒢' sa ⟨sa.p_prime⟩
 
 def power_of_b (a b : ℕ) : Prop :=
   ∃ k, b ^ k = a
@@ -305,15 +303,15 @@ instance adjoin_h_units_fintype [Fact (Nat.Prime sa.p)] : Fintype (AdjoinRoot (h
   apply instFintypeUnitsOfDecidableEq
 
 noncomputable
-instance big_g_fintype : Fintype ↑(big_g' sa).carrier := Fintype.ofFinite ↑(big_g' sa).carrier
+instance big_g_fintype : Fintype ↑(𝒢 sa).carrier := Fintype.ofFinite ↑(𝒢 sa).carrier
 
 -- ((big_g' sa) : Subset (@univ (AdjoinRoot (h_def sa))ˣ _))
 lemma lemma_4_7_helper_f_image [Fact (Nat.Prime sa.p)] :
-    (Finset.image (lemma_4_7_helper_f sa) univ : Finset ((AdjoinRoot (h_def sa))ˣ)) ⊆ Set.toFinset (big_g' sa).carrier := by
+    (Finset.image (lemma_4_7_helper_f sa) univ : Finset ((AdjoinRoot (h_def sa))ˣ)) ⊆ Set.toFinset (𝒢 sa).carrier := by
   sorry
 
 lemma lemma_4_7' [Fact (Nat.Prime sa.p)] :
-    Nat.card (big_g' sa) ≥ (t_def sa + ell sa).choose (t_def sa - 1) := by
+    Nat.card (𝒢 sa) ≥ (t_def sa + ell sa).choose (t_def sa - 1) := by
   calc
     (t_def sa + ell sa).choose (t_def sa - 1) = ((ell sa + 2) + (t_def sa - 1) - 1).choose (t_def sa - 1) := by
       congr
@@ -325,19 +323,19 @@ lemma lemma_4_7' [Fact (Nat.Prime sa.p)] :
     _ = (@univ (Sym (Fin (ell sa + 2)) (t_def sa - 1)) _).card := by exact rfl
     _ = (Finset.image (lemma_4_7_helper_f sa) univ : Finset ((AdjoinRoot (h_def sa))ˣ)).card := by
       exact (Finset.card_image_of_injective univ (lemma_4_7_helper_f_injective sa)).symm
-    _ ≤ (Set.toFinset (big_g' sa).carrier).card := Finset.card_le_card (lemma_4_7_helper_f_image sa)
-    _ = Nat.card (big_g' sa).carrier.toFinset := by
-      exact (Nat.card_eq_finsetCard (Set.toFinset (big_g' sa).carrier)).symm
-    _ = Nat.card (big_g' sa) := by
+    _ ≤ (Set.toFinset (𝒢 sa).carrier).card := Finset.card_le_card (lemma_4_7_helper_f_image sa)
+    _ = Nat.card (𝒢 sa).carrier.toFinset := by
+      exact (Nat.card_eq_finsetCard (Set.toFinset (𝒢 sa).carrier)).symm
+    _ = Nat.card (𝒢 sa) := by
       congr
       simp only [Set.mem_toFinset, Subsemigroup.mem_carrier, Submonoid.mem_toSubsemigroup,
         Subgroup.mem_toSubmonoid]
 
-lemma lemma_4_7 : Nat.card (big_g' sa) ≥ (t_def sa + ell sa).choose (t_def sa - 1) :=
+lemma lemma_4_7 : Nat.card (𝒢 sa) ≥ (t_def sa + ell sa).choose (t_def sa - 1) :=
   @lemma_4_7' sa ⟨sa.p_prime⟩
 
 lemma lemma_4_8 (not_p_power : ¬power_of_b sa.n sa.p):
-    Nat.card (big_g' sa) ≤ (sa.n : ℝ) ^ (sqrt (t_def sa)) := by
+    Nat.card (𝒢 sa) ≤ (sa.n : ℝ) ^ (sqrt (t_def sa)) := by
   sorry
 
 end
