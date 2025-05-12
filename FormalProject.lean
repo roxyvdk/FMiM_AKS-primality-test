@@ -53,7 +53,7 @@ def AKS_algorithm {n: ℕ} (ngt1 : 1 < n) : AKS_Output :=
 lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
   sorry
 
-lemma sublem_4_2_1 (n : ℕ) : n.prime → ¬ perfect_power n := by
+lemma sublem_4_2_1 (n : ℕ) : n.Prime → ¬ perfect_power n := by
   intro hp hpow
   unfold perfect_power at hpow
   rcases hpow with ⟨a, h₁⟩
