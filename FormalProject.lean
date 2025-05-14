@@ -17,9 +17,8 @@ noncomputable
 instance {n : ℕ} : Decidable (perfect_power n) := by
   apply Classical.propDecidable
 
-noncomputable
-def oᵣ (r n : ℕ) : ℕ :=
-  -- the order of n in (ℤ/rℤ)ˣ
+/-- The order of n in `(ℤ/rℤ)ˣ`.-/
+noncomputable def oᵣ (r n : ℕ) : ℕ :=
   orderOf (n : ZMod r)
 
 noncomputable
@@ -36,6 +35,9 @@ instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := by
 def polynomial_equality (r n a : ℕ) : Prop :=
   (((X + C (a : ℤ))^n : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (n : ℤ)} : Set ℤ[X])) = (X^n + C (a : ℤ) : ℤ[X])
 
+def polynomial_equality' (r n a : ℕ) : Prop :=
+  AdjoinRoot.mk (X^r - C (1 : ZMod n)) (X + C (a : ZMod n))^n = AdjoinRoot.mk (X^r - C (1 : ZMod n)) (X^n + C (a : ZMod n))
+
 def step_5_false (r n : ℕ) : Prop :=
   ∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * logb 2 n) ∧ ¬polynomial_equality r n a
 
@@ -44,7 +46,7 @@ instance {r n : ℕ} : Decidable (step_5_false r n) := by
   apply Classical.propDecidable
 
 noncomputable
-def AKS_algorithm {n: ℕ} (ngt1 : 1 < n) : AKS_Output :=
+def AKS_algorithm (n: ℕ) : AKS_Output :=
   if perfect_power n ∨ is_not_coprime_in_range (smallest_r n) n ∨ (smallest_r n < n ∧ step_5_false (smallest_r n) n) then
     COMPOSITE
   else
@@ -100,7 +102,7 @@ lemma sublem_4_2_3 (n : ℕ) : n.Prime → smallest_r n < n → ¬ step_5_false 
   -- linarith
   sorry
 
-lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : n.Prime → AKS_algorithm ngt1 = PRIME := by
+lemma lemma_4_2 (n : ℕ) : n.Prime → AKS_algorithm n = PRIME := by
   intro hp
   unfold AKS_algorithm
   apply if_neg
@@ -171,9 +173,9 @@ lemma lemma_4_6 (m r p : ℕ) (_ : Nat.Prime p) (f g : ℤ[X]) (hmf : introspect
   unfold introspective at *
   simp [mul_pow, ← hmf, ← hmg]
 
-lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm ngt1 = PRIME → Nat.Prime n := sorry
+lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm n = PRIME → Nat.Prime n := sorry
 
-theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm ngt1 = PRIME := by
+theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm n = PRIME := by
   constructor
   exact lemma_4_2 n ngt1
   exact lemma_4_9 n ngt1
