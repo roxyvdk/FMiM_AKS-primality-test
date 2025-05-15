@@ -71,22 +71,22 @@ lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
   have h_const : (C (a : ZMod n)) ^ n = C (a : ZMod n) := by
     rw [ ← C_power, Polynomial.C_inj, ZMod.pow_card]
    -- ZMod.pow_card a
-   
+
   -- Replace the constant term with the simplified form
   rw [h_const]
 
 
--- ← 
+-- ←
   let f:= (X+C (a: ZMod n))^n
   let g:= X^n + C (a: ZMod n)
 -- f-g = (n choose k)
-  
-  let q := Nat.minFac n 
+
+  let q := Nat.minFac n
   let k:= n.factorization q
 --simp[nat.minFac_dvd, Nat.not_prime_iff_minFac_lt]
   have hlt : q < n := by
     rw[hnotprime, Nat.not_prime_iff_minFac]
-  have hpow : q ^ k ∣ n :=by 
+  have hpow : q ^ k ∣ n :=by
     apply pow_multiplicity_dvd_factorization
   have hmult : multiplicity q (Nat.choose n q) = multiplicity q n - multiplicity q q -
   multiplicity q (n - q)
@@ -97,13 +97,13 @@ lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
       simp [coeff_add, coeff_sub, coeff_X_pow, coeff_C, coeff_add_pow,
             if_neg (ne_of_lt hlt).symm, sub_eq_zero] at this
       exact this
-    
+
   have coeff_q_zero : (Nat.choose n q : ZMod n) = 0 := by
       have := congr_arg (fun P => coeff P q) (hpoly)
       simp [coeff_add, coeff_sub, coeff_X_pow, coeff_C, coeff_add_pow
             if_neg (ne_of_lt hlt).symm, sub_eq_zero] at this
       exact this
-    
+
 
 
 lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
@@ -192,7 +192,18 @@ lemma introspec_pow (m r p : ℕ) (f : ℤ[X]) : (introspective m r p f) → ∀
   intro hm q
   unfold introspective at *
   rw [pow_mul, mul_comm, pow_mul]
-  sorry
+  rw [Ideal.Quotient.eq, Ideal.mem_span_pair] at *
+  obtain ⟨am, bm, hm⟩ := hm
+  rw [← sub_eq_zero] at hm
+  have polcomp : (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))) = 0 ∨ Polynomial.eval ((X ^ q : ℤ[X]).coeff 0) (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))) = 0 ∧ (X ^ q : ℤ[X]) = Polynomial.C ((X ^ q : ℤ[X]).coeff 0) → (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))).comp (X ^ q) = 0 := by exact (Iff.symm comp_eq_zero_iff).1
+  have compzero : (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))).comp (X ^ q) = 0 := by
+    apply polcomp
+    left
+    exact hm
+  simp at compzero
+  rw [sub_eq_zero, Polynomial.comp_assoc, Polynomial.X_pow_comp] at compzero
+  use (am.comp (X ^ q)), (bm.comp (X ^ q))
+  simpa
 
 lemma lemma_4_5 (m m' r p : ℕ) (pprime : Nat.Prime p) (f : ℤ[X]) (hm : introspective m r p f) (hm' : introspective m' r p f) : introspective (m * m') r p f := by
   have hmm' : ((f.comp (Polynomial.X ^ m) ^ m' : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^(m * r) - 1, C (p : ℤ)} : Set ℤ[X]))
@@ -397,4 +408,3 @@ lemma lemma_4_8 (not_p_power : ¬power_of_b sa.n sa.p):
 end
 
 end Lemma78
-
