@@ -52,6 +52,60 @@ def AKS_algorithm (n: ℕ) : AKS_Output :=
   else
     PRIME
 
+lemma C_power {R : Type*} [Semiring R] (a : R) (n : ℕ) : C (a ^ n) = (C a) ^ n := by
+  induction n with
+  | zero => simp [pow_zero]  -- Base case
+  | succ d hd =>             -- Inductive step
+    rw [pow_succ, pow_succ, C_mul, hd]
+-- still a work in progress
+lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
+    Nat.Prime n ↔ (X + C (a : ZMod n)) ^ n = X ^ n + C (a : ZMod n) := by
+  constructor
+  intro hprime
+  haveI : Fact (Nat.Prime n) := ⟨hprime⟩
+  have hchar : ExpChar (ZMod n) n := by
+    apply ExpChar.prime
+    exact hprime
+  -- Apply the add_pow_expChar lemma
+  rw [add_pow_expChar]
+  have h_const : (C (a : ZMod n)) ^ n = C (a : ZMod n) := by
+    rw [ ← C_power, Polynomial.C_inj, ZMod.pow_card]
+   -- ZMod.pow_card a
+   
+  -- Replace the constant term with the simplified form
+  rw [h_const]
+
+
+-- ← 
+  let f:= (X+C (a: ZMod n))^n
+  let g:= X^n + C (a: ZMod n)
+-- f-g = (n choose k)
+  
+  let q := Nat.minFac n 
+  let k:= n.factorization q
+--simp[nat.minFac_dvd, Nat.not_prime_iff_minFac_lt]
+  have hlt : q < n := by
+    rw[hnotprime, Nat.not_prime_iff_minFac]
+  have hpow : q ^ k ∣ n :=by 
+    apply pow_multiplicity_dvd_factorization
+  have hmult : multiplicity q (Nat.choose n q) = multiplicity q n - multiplicity q q -
+  multiplicity q (n - q)
+  apply  Nat.Prime_multiplicity_choose_aux q n q hq (Nat.zero_lt_of_lt hlt) hlt
+
+  have coeff_q_zero : (Nat.choose n q : ZMod n) = 0 := by
+      have := congr_arg (fun P => coeff P q) (hpoly)
+      simp [coeff_add, coeff_sub, coeff_X_pow, coeff_C, coeff_add_pow,
+            if_neg (ne_of_lt hlt).symm, sub_eq_zero] at this
+      exact this
+    
+  have coeff_q_zero : (Nat.choose n q : ZMod n) = 0 := by
+      have := congr_arg (fun P => coeff P q) (hpoly)
+      simp [coeff_add, coeff_sub, coeff_X_pow, coeff_C, coeff_add_pow
+            if_neg (ne_of_lt hlt).symm, sub_eq_zero] at this
+      exact this
+    
+
+
 lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
   sorry
 
