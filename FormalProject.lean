@@ -278,6 +278,7 @@ structure Step5Assumptions where
   pgtr : r < p
   p_prime : p.Prime
   hp : p.gcd r = 1
+  p_dvd_n : p ∣ n
 
 lemma elem_in_set_imp_in_closure {G : Type*} [Group G] {S : Set G} {x : G} (hx : x ∈ S) : x ∈ Subgroup.closure S :=
   Subgroup.mem_closure.mpr fun _ a => a hx
