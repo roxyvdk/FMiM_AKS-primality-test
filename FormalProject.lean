@@ -238,6 +238,39 @@ lemma lemma_4_6 (m r p : ℕ) (_ : Nat.Prime p) (f g : ℤ[X]) (hmf : introspect
   unfold introspective at *
   simp [mul_pow, ← hmf, ← hmg]
 
+
+class Step5Assumptions where
+  r : ℕ
+  n : ℕ
+  p : ℕ
+  rgt0 : 0 < r
+  hrp : 1 < oᵣ r p
+  hn : n.gcd r = 1
+  pgtr : r < p
+  p_prime : p.Prime
+  hp : p.gcd r = 1
+  p_dvd_n : p ∣ n
+
+section
+
+noncomputable def ℓ (sa : Step5Assumptions) : ℕ := Nat.floor (√sa.r.totient * logb 2 sa.n)
+
+def introspective' (sa : Step5Assumptions) (m : ℕ) (f : (ZMod sa.p)[X]) : Prop :=
+  AdjoinRoot.mk (X ^ sa.r - 1) (f ^ m) = AdjoinRoot.mk (X ^ sa.r - 1) (f.comp X ^ m)
+
+def I_fun (sa : Step5Assumptions) : ℕ → ℕ → ℕ := fun i => fun j => (sa.n / sa.p) ^ i * sa.p ^ j
+
+def I (sa : Step5Assumptions) : Set ℕ := Set.image2 (I_fun sa) Set.univ Set.univ
+
+noncomputable def P (sa : Step5Assumptions) : Submonoid ((ZMod sa.p)[X]) :=
+  Submonoid.closure ((fun (i : ℕ) => (X + C (i : ZMod sa.p))) '' (range (ℓ sa + 2)))
+
+lemma lemma_4_6' (sa : Step5Assumptions) : ∀ m ∈ I sa, ∀ f ∈ P sa, introspective' sa m f := by
+  sorry
+
+end
+
+
 lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm n = PRIME → Nat.Prime n := sorry
 
 theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm n = PRIME := by
