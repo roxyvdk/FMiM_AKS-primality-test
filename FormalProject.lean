@@ -545,16 +545,22 @@ lemma I_hat_in_I {m : ℕ} : m ∈ I_hat → m ∈ I := by
   rcases Finset.mem_image₂.mp hm with ⟨i, _, j, _, hij⟩
   use i, trivial, j, trivial, hij
 
-lemma exists_q_coprime (not_p_power : ¬is_power_of sa.n sa.p) : ∃ q : ℕ, q.Coprime sa.p ∧ 0 < sa.n.factorization q := by
+lemma exists_q_coprime (not_p_power : ¬is_power_of sa.n sa.p) : ∃ q : ℕ, q.Prime ∧ q.Coprime sa.p ∧ 0 < sa.n.factorization q := by
   unfold is_power_of at *
   push_neg at not_p_power
   have h₁ : sa.n / (sa.p ^ sa.n.factorization sa.p) ≠ 1 := by
-    sorry
+    intro h₂
+    exact not_p_power (sa.n.factorization sa.p) (Nat.eq_of_dvd_of_div_eq_one (Nat.ord_proj_dvd sa.n sa.p) h₂)
   rcases Nat.ne_one_iff_exists_prime_dvd.mp h₁ with ⟨q, q_prime, hq⟩
-  use q
-  constructor
-  · sorry
-  · sorry
+  apply Nat.mul_dvd_of_dvd_div (Nat.ord_proj_dvd sa.n sa.p) at hq
+  have q_coprime_p : q.Coprime sa.p := by
+    apply (Nat.coprime_primes q_prime sa.p_prime ).mpr
+    rintro rfl
+    rw [← pow_succ] at hq
+    exact Nat.pow_succ_factorization_not_dvd (ne_of_lt ngt0).symm sa.p_prime hq
+  use q, q_prime, q_coprime_p
+  apply Nat.Prime.factorization_pos_of_dvd q_prime (ne_of_lt ngt0).symm
+  exact dvd_trans (Nat.dvd_mul_left q _) hq
 
 lemma n_div_p_pos : 0 < sa.n / sa.p := (Nat.div_pos (Nat.le_of_dvd ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime))
 
