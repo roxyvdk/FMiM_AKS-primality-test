@@ -13,23 +13,20 @@ export AKS_Output (PRIME COMPOSITE)
 def perfect_power (n : ℕ) : Prop :=
   ∃ (a b : ℕ), b > 1 ∧ n = a ^ b
 
-noncomputable
-instance {n : ℕ} : Decidable (perfect_power n) := by
+noncomputable instance {n : ℕ} : Decidable (perfect_power n) := by
   apply Classical.propDecidable
 
 /-- The order of n in `(ℤ/rℤ)ˣ`.-/
 noncomputable def oᵣ (r n : ℕ) : ℕ :=
   orderOf (n : ZMod r)
 
-noncomputable
-def smallest_r (n : ℕ) : ℕ :=
+noncomputable def smallest_r (n : ℕ) : ℕ :=
   sInf {r : ℕ | oᵣ r n > (logb 2 n) ^ 2}
 
 def is_not_coprime_in_range (r n : ℕ) : Prop :=
   ∃ a : ℕ, a ≤ r ∧ 1 < n.gcd a ∧ n.gcd a < n
 
-noncomputable
-instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := by
+noncomputable instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := by
   apply Classical.propDecidable
 
 def polynomial_equality (r n a : ℕ) : Prop :=
@@ -41,12 +38,10 @@ def polynomial_equality' (r n a : ℕ) : Prop :=
 def step_5_false (r n : ℕ) : Prop :=
   ∃ a : ℕ, 1 ≤ a ∧ a ≤ Nat.floor (Real.sqrt r.totient * logb 2 n) ∧ ¬polynomial_equality r n a
 
-noncomputable
-instance {r n : ℕ} : Decidable (step_5_false r n) := by
+noncomputable instance {r n : ℕ} : Decidable (step_5_false r n) := by
   apply Classical.propDecidable
 
-noncomputable
-def AKS_algorithm (n: ℕ) : AKS_Output :=
+noncomputable def AKS_algorithm (n: ℕ) : AKS_Output :=
   if perfect_power n ∨ is_not_coprime_in_range (smallest_r n) n ∨ (smallest_r n < n ∧ step_5_false (smallest_r n) n) then
     COMPOSITE
   else
@@ -238,6 +233,13 @@ lemma lemma_4_6 (m r p : ℕ) (_ : Nat.Prime p) (f g : ℤ[X]) (hmf : introspect
   unfold introspective at *
   simp [mul_pow, ← hmf, ← hmg]
 
+lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm n = PRIME → Nat.Prime n := sorry
+
+theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm n = PRIME := by
+  constructor
+  exact lemma_4_2 n ngt1
+  exact lemma_4_9 n ngt1
+
 
 class Step5Assumptions where
   r : ℕ
@@ -272,16 +274,6 @@ lemma lemma_4_6' : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
 
 end
 
-
-
-lemma lemma_4_9 (n : ℕ) (ngt1 : 1 < n) : AKS_algorithm n = PRIME → Nat.Prime n := sorry
-
-theorem theorem_4_1 (n : ℕ) (ngt1 : 1 < n) : n.Prime ↔ AKS_algorithm n = PRIME := by
-  constructor
-  exact lemma_4_2 n ngt1
-  exact lemma_4_9 n ngt1
-
-
 namespace Real
 
 lemma mk_const {x : ℚ} : mk (CauSeq.const abs x) = x := rfl
@@ -302,12 +294,30 @@ theorem pow_le_pow_of_le' {a n m : Nat} (h : 0 < a) (w : n ≤ m) : a ^ n ≤ a 
 
 end Nat
 
+namespace Polynomial
+
+lemma comp_dvd {R : Type*} [CommRing R] {f₁ f₂ g : R[X]} (hg : g.natDegree ≠ 0) :
+    f₁ - f₂ ∣ g.comp f₁ - g.comp f₂ := by
+  apply @Polynomial.natDegree_ne_zero_induction_on _ _ (fun g : R[X] => f₁ - f₂ ∣ g.comp f₁ - g.comp f₂) g hg
+  · intro a p
+    simp only [add_comp, C_comp, add_sub_add_left_eq_sub, imp_self]
+  · intro p q hp hq
+    have hpq : (p + q).comp f₁ - (p + q).comp f₂ = (p.comp f₁ - p.comp f₂) + (q.comp f₁ - q.comp f₂) := by
+      simp only [add_comp]
+      ring
+    rw [hpq]
+    exact dvd_add hp hq
+  · intro n a _ _
+    simp only [monomial_comp]
+    apply dvd_mul_sub_mul
+    · simp only [sub_self, dvd_zero]
+    · exact sub_dvd_pow_sub_pow f₁ f₂ n
+
+end Polynomial
+
 namespace Lemma78
 
-lemma elem_in_set_imp_in_closure {G : Type*} [Group G] {S : Set G} {x : G} (hx : x ∈ S) : x ∈ Subgroup.closure S :=
-  Subgroup.mem_closure.mpr fun _ a => a hx
-
-lemma elem_in_set_imp_in_closure' {G : Type*} [Monoid G] {S : Set G} {x : G} (hx : x ∈ S) : x ∈ Submonoid.closure S :=
+lemma elem_in_set_imp_in_closure {G : Type*} [Monoid G] {S : Set G} {x : G} (hx : x ∈ S) : x ∈ Submonoid.closure S :=
   Submonoid.mem_closure.mpr fun _ a => a hx
 
 lemma not_inj_of_card_le_card {α β : Type*} [Finite β] (h2 : Nat.card β < Nat.card α) (f : α → β) : ¬Function.Injective f :=
@@ -363,8 +373,6 @@ instance [Fact (Nat.Prime sa.p)] : CharP (AdjoinRoot h) sa.p := by
 lemma p_pow_order_gt_one : 1 < sa.p ^ oᵣ sa.r sa.p :=
   Nat.one_lt_pow (Nat.not_eq_zero_of_lt sa.hrp) (Nat.Prime.one_lt sa.p_prime)
 
-#check GaloisField
-
 theorem deg_h_eq_order [Fact (Nat.Prime sa.p)] : h.natDegree = oᵣ sa.r sa.p := by
   sorry
 
@@ -386,13 +394,6 @@ def G : Subgroup (ZMod sa.r)ˣ :=
 noncomputable def t : ℕ := Nat.card G
 
 lemma t_gt_zero : 0 < t := Nat.card_pos
-
-#check MonoidHom.map_mclosure
-#check Submonoid.map
-
-lemma submonoid_closure_map_comm {M N : Type*} [Monoid M] [Monoid N] (f : M →* N) (S : Set M) :
-    f '' Submonoid.closure S = Submonoid.closure (f '' S) := by
-  sorry
 
 -- Slightly different from `𝒢` used in the paper, since we need `X + (ℓ + 1)`
 noncomputable def 𝒢' [Fact (Nat.Prime sa.p)] : Submonoid (AdjoinRoot h) :=
@@ -426,44 +427,6 @@ lemma prod_pow_mk_eq_mk_prod_pow (M : Sym (Fin (ℓ + 2)) (t - 1)) [Fact (Nat.Pr
     ∏ (i ∈ Multiset.toFinset M), (AdjoinRoot.mk h (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p))) ^ (Multiset.count i M) =
     AdjoinRoot.mk h (∏ (i ∈ Multiset.toFinset M), (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ (Multiset.count i M)) := by
   simp only [map_prod, map_pow]
-
-#check Polynomial.roots_prod_X_sub_C
-#check Polynomial.roots.le_of_dvd
-#check Polynomial.eq_of_dvd_of_natDegree_le_of_leadingCoeff
-#check Polynomial.rootMultiplicity_eq_multiplicity
---#check FiniteMultiplicity.pow_dvd_iff_le_multiplicity
-#check multiplicity.Finite.pow_dvd_iff_le_multiplicity
-#check Polynomial.le_rootMultiplicity_iff
-#check Polynomial.eq_of_monic_of_dvd_of_natDegree_le
-#check Finset.prod_map_val
-#check Finset.prod_map
-#check Finset.prod_multiset_map_count
-#check Multiset.prod_map_erase
-#check Multiset.map_map
-#check Finset.prod_bijective
-#check Finset.prod_equiv
-#check Finset.prod_nbij
-#check Finset.prod_nbij'
-#check Finset.prod_bij_ne_one
-#check Finset.prod_bij
--- ↪
-#check Function.Embedding
-#check Multiset.card
-#check Polynomial.roots_pow
-#check Polynomial.roots_X_add_C
-#check neg_eq_iff_eq_neg
-#check Polynomial.roots_prod_X_sub_C
-#check Polynomial.roots_prod
-#check Polynomial.roots_multiset_prod_X_sub_C
---#check Polynomial.Monic.roots_map_of_card_eq_natDegree
-#check neg_eq_iff_eq_neg
-#check Function.comp_apply
-#check Subgroup.multiset_prod_mem
-#check Polynomial.roots_multiset_prod
-
-lemma asdjfkl {α β γ : Type*} [CommMonoid γ] (M : Finset α) (f : α ↪ β) (g : β → γ) :
-    ∏ i ∈ M, (g ∘ f) i = ∏ i ∈ Finset.map f M, g i := by
-  simp only [Function.comp_apply, prod_map]
 
 def neg_M (M : Sym (Fin (ℓ + 2)) (t - 1)) : Multiset ℤ :=
   Multiset.map (fun i => -(i : ℤ)) (M : Multiset (Fin (ℓ + 2)))
@@ -527,9 +490,6 @@ lemma lemma_4_7_helper_f_injective [Fact (Nat.Prime sa.p)] :
     Function.Injective lemma_4_7_helper_f := by
   intro x y hfxy
   unfold lemma_4_7_helper_f at *
-  --unfold IsUnit.unit' at hfxy
-  --apply Units.eq_iff.mpr at hfxy
-  --simp only [Units.coe_prod, Units.val_pow_eq_pow_val] at hfxy
   rw [prod_pow_mk_eq_mk_prod_pow, prod_pow_mk_eq_mk_prod_pow] at hfxy
   apply AdjoinRoot.mk_eq_mk.mp at hfxy
   have prod_eq_prod : ∏ i ∈ Multiset.toFinset x, (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i x =
@@ -541,23 +501,14 @@ lemma lemma_4_7_helper_f_injective [Fact (Nat.Prime sa.p)] :
 
 noncomputable instance 𝒢_fintype : Fintype ↑𝒢.carrier := Fintype.ofFinite ↑𝒢.carrier
 
-#check Subgroup.prod_mem
-#check Submonoid.prod_mem
-#check Subgroup.pow_mem
-#check Submonoid.pow_mem
-
 lemma lemma_4_7_helper_f_image [Fact (Nat.Prime sa.p)] :
-    --(Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h)ˣ)) ⊆ Set.toFinset 𝒢.carrier := by
     (Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h))) ⊆ Set.toFinset 𝒢.carrier := by
   unfold 𝒢 𝒢' lemma_4_7_helper_f
   simp only [Set.subset_toFinset, coe_image, coe_univ, Set.image_univ]
   rintro x ⟨y, rfl⟩
-  --apply Subgroup.prod_mem
   apply Submonoid.prod_mem
   intro c _
-  --apply Subgroup.pow_mem
   apply Submonoid.pow_mem
-  --apply elem_in_set_imp_in_closure
   apply elem_in_set_imp_in_closure'
   simp only [coe_range, Set.mem_image, Set.mem_Iio]
   use c, Fin.is_lt c
@@ -594,17 +545,6 @@ lemma I_hat_in_I {m : ℕ} : m ∈ I_hat → m ∈ I := by
   rcases Finset.mem_image₂.mp hm with ⟨i, _, j, _, hij⟩
   use i, trivial, j, trivial, hij
 
-#check Nat.factorization_mul
-#check Nat.factorization_pow
-#check Nat.factorization_mul_apply_of_coprime
-#check padicValNat.div'
-#check Nat.factorization_div
-#check Nat.pow_right_injective
-#check Nat.le_of_dvd
-#check Nat.ne_one_iff_exists_prime_dvd
-#check Nat.Prime.factorization_pos_of_dvd
-#check Finset.mem_coe
-
 lemma exists_q_coprime (not_p_power : ¬is_power_of sa.n sa.p) : ∃ q : ℕ, q.Coprime sa.p ∧ 0 < sa.n.factorization q := by
   unfold is_power_of at *
   push_neg at not_p_power
@@ -616,12 +556,42 @@ lemma exists_q_coprime (not_p_power : ¬is_power_of sa.n sa.p) : ∃ q : ℕ, q.
   · sorry
   · sorry
 
+lemma n_div_p_pos : 0 < sa.n / sa.p := (Nat.div_pos (Nat.le_of_dvd ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime))
+
 lemma I_hat_fun_inj (not_p_power : ¬is_power_of sa.n sa.p) : Function.Injective2 I_hat_fun := by
   intro i₁ j₁ i₂ j₂ heq
   unfold I_hat_fun at *
-  rcases exists_q_coprime not_p_power with ⟨q, q_coprime_p, hq⟩
+  rcases exists_q_coprime not_p_power with ⟨q, q_prime, q_coprime_p, hq⟩
+  have p_factorization_q : sa.p.factorization q = 0 :=
+    Nat.factorization_eq_zero_of_not_dvd ((Nat.Prime.coprime_iff_not_dvd q_prime).mp q_coprime_p)
+  have p_pow_factorization_q (i : ℕ) : (sa.p ^ i).factorization q = 0 := by
+    simp only [Nat.factorization_pow, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul, mul_eq_zero]
+    right
+    exact p_factorization_q
   have factorization_eq : (i₁ : ℕ) * sa.n.factorization q = (j₁ : ℕ) * sa.n.factorization q := by
-    sorry
+    calc
+      (i₁ : ℕ) * sa.n.factorization q = (i₁ : ℕ) * (sa.n.factorization q - sa.p.factorization q) := by
+        rw [p_factorization_q]; simp
+      _ = (i₁ : ℕ) * ((sa.n / sa.p).factorization q) := by
+        rw [Nat.factorization_div sa.p_dvd_n]; simp
+      _ = ((sa.n / sa.p) ^ (i₁ : ℕ)).factorization q := by
+        simp
+      _ = ((sa.n / sa.p) ^ (i₁ : ℕ)).factorization q + (sa.p ^ (i₂ : ℕ)).factorization q := by
+        rw [p_pow_factorization_q]; simp
+      _ = ((sa.n / sa.p) ^ (i₁ : ℕ) * sa.p ^ (i₂ : ℕ)).factorization q := by
+        rw [Nat.factorization_mul (ne_of_lt (Nat.pow_pos n_div_p_pos)).symm (ne_of_lt (Nat.pow_pos (Nat.Prime.pos sa.p_prime))).symm]; simp
+      _ = ((sa.n / sa.p) ^ (j₁ : ℕ) * sa.p ^ (j₂ : ℕ)).factorization q := by
+        rw [heq]
+      _ = ((sa.n / sa.p) ^ (j₁ : ℕ)).factorization q + (sa.p ^ (j₂ : ℕ)).factorization q := by
+        rw [Nat.factorization_mul (ne_of_lt (Nat.pow_pos n_div_p_pos)).symm (ne_of_lt (Nat.pow_pos (Nat.Prime.pos sa.p_prime))).symm]; simp
+      _ = ((sa.n / sa.p) ^ (j₁ : ℕ)).factorization q := by
+        rw [p_pow_factorization_q]; simp
+      _ = (j₁ : ℕ) * ((sa.n / sa.p).factorization q) := by
+        simp
+      _ = (j₁ : ℕ) * (sa.n.factorization q - sa.p.factorization q) := by
+        rw [Nat.factorization_div sa.p_dvd_n]; simp
+      _ = (j₁ : ℕ) * sa.n.factorization q := by
+        rw [p_factorization_q]; simp
   have i₁eqj₁ : (i₁ : ℕ) = j₁ := Nat.mul_right_cancel hq factorization_eq
   have p_pow_eq : sa.p ^ (i₂ : ℕ) = sa.p ^ (j₂ : ℕ) := by
     rw [i₁eqj₁] at heq
@@ -709,14 +679,19 @@ lemma degree_x_pow_m (m : ℕ) [Fact (Nat.Prime sa.p)] : ((X : (AdjoinRoot h)[X]
 
 noncomputable def Q' (m₁ m₂ : ℕ) [Fact (Nat.Prime sa.p)] : (AdjoinRoot h)[X] := X ^ m₁ - X ^ m₂
 
+lemma Q'_degree {m₁ m₂ : ℕ} (m₁gtm₂ : m₁ > m₂) [Fact (Nat.Prime sa.p)] : (Q' m₁ m₂).natDegree = m₁ := by
+  unfold Q'
+  nth_rw 2 [← degree_x_pow_m m₁]
+  apply Polynomial.natDegree_sub_eq_left_of_natDegree_lt
+  simpa only [natDegree_pow, natDegree_X, mul_one]
+
 lemma h_dvd_x_pow_r_minus_one [Fact (Nat.Prime sa.p)] : h ∣ (X^sa.r - 1) :=
   dvd_trans (factor_dvd_of_not_isUnit Qᵣ_not_unit) (cyclotomic.dvd_X_pow_sub_one sa.r (ZMod sa.p))
 
-lemma x_r_eq_1 [Fact (Nat.Prime sa.p)] : AdjoinRoot.mk h X ^ sa.r = 1 := by
-  apply (@sub_left_inj _ _ 1 (AdjoinRoot.mk h X ^ sa.r) 1).mp
+lemma x_pow_r_eq_1 [Fact (Nat.Prime sa.p)] : AdjoinRoot.mk h (X ^ sa.r) = 1 := by
+  apply (@sub_left_inj _ _ 1 (AdjoinRoot.mk h (X ^ sa.r)) 1).mp
   rw [sub_self]
-  apply AdjoinRoot.mk_eq_zero.mpr
-  exact h_dvd_x_pow_r_minus_one
+  exact AdjoinRoot.mk_eq_zero.mpr h_dvd_x_pow_r_minus_one
 
 def introspective'' [Fact (Nat.Prime sa.p)] (m : ℕ) (f : (ZMod sa.p)[X]) : Prop :=
   AdjoinRoot.mk h (f ^ m) = AdjoinRoot.mk h (f.comp (X ^ m))
@@ -728,18 +703,15 @@ lemma lemma_4_6'' [Fact (Nat.Prime sa.p)] {m : ℕ} {f : (ZMod sa.p)[X]} (m_in_I
   simp only [AdjoinRoot.mk_eq_mk] at *
   exact dvd_trans h_dvd_x_pow_r_minus_one hi
 
-lemma elem_𝒢_imp_root {m₁ m₂ : ℕ} (m₁_I_hat : m₁ ∈ I_hat) (m₂_I_hat : m₂ ∈ I_hat) (hm₁m₂r : m₁ ≡ m₂ [MOD sa.r]) [Fact (Nat.Prime sa.p)] :
-  --coe_𝒢.val ≤ (Q' m₁ m₂).roots := by
+lemma elem_𝒢_imp_root {m₁ m₂ : ℕ} (m₁_I_hat : m₁ ∈ I_hat) (m₂_I_hat : m₂ ∈ I_hat) (hm₁m₂r : m₁ ≡ m₂ [MOD sa.r]) (m₁gtm₂ : m₁ > m₂) [Fact (Nat.Prime sa.p)] :
   𝒢.carrier.toFinset.val ≤ (Q' m₁ m₂).roots := by
   apply Multiset.le_iff_count.mpr
   intro f
-  --by_cases hf : f ∈ coe_𝒢
   by_cases hf : f ∈ 𝒢.carrier.toFinset
-  · have Q'neq0 : Q' m₁ m₂ ≠ 0 := by
-      sorry
-    have x_pow_m₁_eq_x_pow_m₂ : (AdjoinRoot.mk h X) ^ m₁ = (AdjoinRoot.mk h X) ^ m₂ := by
-
-      sorry
+  · have Q'neq0 : Q' m₁ m₂ ≠ 0 := Polynomial.ne_zero_of_natDegree_gt ((Q'_degree m₁gtm₂) ▸ Nat.zero_lt_of_lt m₁gtm₂)
+    have x_pow_m₁_eq_x_pow_m₂ : AdjoinRoot.mk h (X ^ m₁) = AdjoinRoot.mk h (X ^ m₂) := by
+      rcases (Nat.modEq_iff_dvd' (le_of_lt m₁gtm₂)).mp hm₁m₂r.symm with ⟨k, hk⟩
+      rw [Nat.eq_add_of_sub_eq (le_of_lt m₁gtm₂) hk, pow_add, pow_mul, map_mul, map_pow, x_pow_r_eq_1, one_pow, one_mul]
     have hfQ : f ∈ (Q' m₁ m₂).roots := by
       apply (Polynomial.mem_roots_iff_aeval_eq_zero Q'neq0).mpr
       unfold Q'
@@ -751,14 +723,20 @@ lemma elem_𝒢_imp_root {m₁ m₂ : ℕ} (m₁_I_hat : m₁ ∈ I_hat) (m₂_I
       have gm₁i := lemma_4_6'' (I_hat_in_I m₁_I_hat) g_in_P
       have gm₂i := lemma_4_6'' (I_hat_in_I m₂_I_hat) g_in_P
       unfold introspective'' at *
-      rw [gm₁i, gm₂i]
-      sorry
+      simp only [map_pow] at gm₁i gm₂i
+      rw [gm₁i, gm₂i, sub_eq_zero]
+      simp only [AdjoinRoot.mk_eq_mk] at *
+      by_cases g_degree_0 : g.natDegree = 0
+      · rcases Polynomial.natDegree_eq_zero.mp g_degree_0 with ⟨a, rfl⟩
+        simp only [C_comp, sub_self, dvd_zero]
+      · calc
+          h ∣ X ^ m₁ - X ^ m₂ := x_pow_m₁_eq_x_pow_m₂
+          _ ∣ g.comp (X ^ m₁) - g.comp (X ^ m₂) := by
+            exact Polynomial.comp_dvd g_degree_0
     calc
-      --Multiset.count f coe_𝒢.val = 1 := Multiset.count_eq_one_of_mem (Finset.nodup coe_𝒢) hf
       Multiset.count f 𝒢.carrier.toFinset.val = 1 := Multiset.count_eq_one_of_mem (Finset.nodup 𝒢.carrier.toFinset) hf
       _ ≤ Multiset.count f (Q' m₁ m₂).roots := Multiset.one_le_count_iff_mem.mpr hfQ
   · calc
-      --Multiset.count f coe_𝒢.val = 0 := Multiset.count_eq_zero.mpr hf
       Multiset.count f 𝒢.carrier.toFinset.val = 0 := Multiset.count_eq_zero.mpr hf
       _ ≤ Multiset.count f (Q' m₁ m₂).roots := Nat.zero_le _
 
@@ -767,19 +745,11 @@ lemma lemma_4_8' [Fact (Nat.Prime sa.p)] (not_p_power : ¬is_power_of sa.n sa.p)
   rcases exists_m₁_m₂ not_p_power with ⟨m₁, m₂, m₁_I_hat, m₂_I_hat, hm₁m₂r, m₁gtm₂⟩
   calc
     Nat.card 𝒢 = Finset.card 𝒢.carrier.toFinset := Nat.card_eq_card_toFinset 𝒢.carrier
-    --_ = Finset.card coe_𝒢 := (Finset.card_map ⟨Units.val, @Units.ext (AdjoinRoot h) _⟩).symm
-    --_ = Multiset.card coe_𝒢.val := Finset.card_def coe_𝒢
     _ = Multiset.card 𝒢.carrier.toFinset.val := Finset.card_def 𝒢.carrier.toFinset
-    _ ≤ Multiset.card (Q' m₁ m₂).roots := by
-      exact Multiset.card_le_card (elem_𝒢_imp_root m₁_I_hat m₂_I_hat hm₁m₂r)
+    _ ≤ Multiset.card (Q' m₁ m₂).roots := Multiset.card_le_card (elem_𝒢_imp_root m₁_I_hat m₂_I_hat hm₁m₂r m₁gtm₂)
     _ ≤ (Q' m₁ m₂).natDegree := Polynomial.card_roots' (Q' m₁ m₂)
-    _ = m₁ := by
-      unfold Q'
-      nth_rw 2 [← degree_x_pow_m m₁]
-      apply Polynomial.natDegree_sub_eq_left_of_natDegree_lt
-      simpa only [natDegree_pow, natDegree_X, mul_one]
-    _ ≤ sa.n ^ ⌊√t⌋₊ := by
-      exact in_I_hat_imp_le_n_pow_sqrt_t m₁_I_hat
+    _ = m₁ := Q'_degree m₁gtm₂
+    _ ≤ sa.n ^ ⌊√t⌋₊ := in_I_hat_imp_le_n_pow_sqrt_t m₁_I_hat
 
 lemma lemma_4_8_glue : sa.n ^ ⌊√t⌋₊ ≤ (sa.n : ℝ) ^ √t := by
   have cast_n_ge_1 : 1 ≤ (sa.n : ℝ) := by exact_mod_cast ngt0
