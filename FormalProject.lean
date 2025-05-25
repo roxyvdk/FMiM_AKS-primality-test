@@ -111,7 +111,6 @@ class Step5Assumptions where
   r : ℕ
   n : ℕ
   p : ℕ
-  ngt1 : n > 1
   rgt0 : 0 < r
   hrn : (logb 2 n) ^ 2 < oᵣ r n
   hrp : 1 < oᵣ r p
@@ -122,11 +121,24 @@ class Step5Assumptions where
   p_dvd_n : p ∣ n
   ngt1 : 1 < n
   ngt0 : 0 < n := Nat.zero_lt_of_lt ngt1
-  h_step_5 : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))
+  h_step_5 : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ r - 1) ((X + C (a : ZMod n) : (ZMod n)[X]) ^ n) = AdjoinRoot.mk (X ^ r - 1) ((X + C (a : ZMod n) : (ZMod n)[X]).comp (X ^ n))
 
 section
 
 variable [sa : Step5Assumptions]
+
+lemma rgt1 : 1 < sa.r := by
+  have rne1 : sa.r ≠ 1 := by
+    intro req1
+    have h₁ := req1 ▸ sa.hrp
+    exact (lt_iff_not_le.mp h₁) orderOf_le_card_univ
+  exact Nat.lt_of_le_of_ne sa.rgt0 rne1.symm
+
+instance : NeZero sa.p := ⟨Nat.Prime.ne_zero sa.p_prime⟩
+
+instance : NeZero sa.r := ⟨(ne_of_lt (Nat.zero_lt_of_lt rgt1)).symm⟩
+
+instance : Fact (sa.p.Prime) := ⟨sa.p_prime⟩
 
 noncomputable def ℓ : ℕ := Nat.floor (√sa.r.totient * logb 2 sa.n)
 
@@ -177,7 +189,7 @@ lemma lemma_4_5' (m m' : ℕ) (f : (ZMod sa.p)[X]) (hm : introspective' m f) (hm
       simp only [f, g, ← C_1, ← sub_eq_add_neg]
       have : (∑ i ∈ Finset.range m, (X : (ZMod sa.p)[X]) ^ (i * sa.r)) = (∑ i ∈ Finset.range m, (X ^ sa.r) ^ i) := by
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         rw [pow_mul]
         ring
       simp
@@ -200,7 +212,7 @@ def I_fun : ℕ → ℕ → ℕ := fun i => fun j => (sa.n / sa.p) ^ i * sa.p ^ 
 def I : Set ℕ := Set.image2 I_fun Set.univ Set.univ
 
 noncomputable def P : Submonoid ((ZMod sa.p)[X]) :=
-  Submonoid.closure ((fun (i : ℕ) => (X + C (i : ZMod sa.p))) '' (range (ℓ + 2)))
+  Submonoid.closure ((fun (i : ℕ) => (X + C (i : ZMod sa.p))) '' (range (ℓ + 1)))
 
 lemma introspective_np (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))) : ∀ (a : ℕ), a ≤ ℓ → introspective' sa.n (X + C (a : ZMod sa.p) : (ZMod sa.p)[X]) := by
   let f : ZMod sa.n →+* ZMod sa.p := ZMod.castHom sa.p_dvd_n (ZMod sa.p)
@@ -422,18 +434,11 @@ section
 
 variable [sa : Step5Assumptions]
 
-lemma rgt1 : 1 < sa.r := by
-  have rne1 : sa.r ≠ 1 := by
-    intro req1
-    have h₁ := req1 ▸ sa.hrp
-    exact (lt_iff_not_le.mp h₁) orderOf_le_card_univ
-  exact Nat.lt_of_le_of_ne sa.rgt0 rne1.symm
+--instance : NeZero sa.p := ⟨Nat.Prime.ne_zero sa.p_prime⟩
 
-instance : NeZero sa.p := ⟨Nat.Prime.ne_zero sa.p_prime⟩
+--instance : NeZero sa.r := ⟨(ne_of_lt (Nat.zero_lt_of_lt rgt1)).symm⟩
 
-instance : NeZero sa.r := ⟨(ne_of_lt (Nat.zero_lt_of_lt rgt1)).symm⟩
-
-instance : Fact (sa.p.Prime) := ⟨sa.p_prime⟩
+--instance : Fact (sa.p.Prime) := ⟨sa.p_prime⟩
 
 noncomputable def Qᵣ := cyclotomic sa.r (ZMod sa.p)
 
@@ -1041,6 +1046,8 @@ end Lemma78
 
 section
 
+open Lemma78
+
 variable (sa : Step5Assumptions)
 
 lemma lem_2_1_result (n : ℕ) (a : ℤ) (h : (X + C (a : ZMod n)) ^ n = X ^ n + C (a : ZMod n)):
@@ -1169,7 +1176,7 @@ lemma sqrt_t_gt_log_n (t n : ℕ) : √t > Real.logb 2 n := by
 
 lemma sqrt_t_gt0 : √ t > 0 := by
   apply Real.sqrt_pos_of_pos
-  exact Nat.cast_pos'.mpr t_gt_zero
+  exact Nat.cast_pos'.mpr tgt0
 
 
 lemma ell_ineq: ℓ ≥ Nat.floor (√t * Real.logb 2 sa.n) := by
@@ -1192,7 +1199,7 @@ lemma ell_ineq: ℓ ≥ Nat.floor (√t * Real.logb 2 sa.n) := by
   have hineq: t - 1 ≥ Nat.floor (Real.sqrt t * Real.logb 2 sa.n) := by
     apply (floor_le_iff _ _ _).mpr
     · norm_cast
-      rw [Nat.sub_add_cancel t_gt_zero, mul_comm]
+      rw [Nat.sub_add_cancel tgt0, mul_comm]
       nth_rw 2 [←Real.sq_sqrt (Nat.cast_nonneg' t)]
       rw [pow_two]
       apply mul_lt_mul_of_pos_right
@@ -1209,7 +1216,7 @@ lemma ell_ineq: ℓ ≥ Nat.floor (√t * Real.logb 2 sa.n) := by
       t + ℓ  = t + 1 + ℓ- 1 := by exact Eq.symm (Nat.succ_add_sub_one ℓ t)
       _ = ℓ + 1 + t - 1 := by ring_nf
       _ = ℓ + 1 + (t - 1) := by
-        rw [←Nat.add_sub_assoc t_gt_zero]
+        rw [←Nat.add_sub_assoc tgt0]
   rw [this]
   apply choose_increasing
   exact hineq
@@ -1472,6 +1479,8 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
         rw [this] at hdiv
         exact Nat.eq_one_of_dvd_one hdiv
       p_dvd_n := hp.right.left -- : p ∣ n
+      h_step_5 := sorry
+      hrn := sorry
     }
 
     apply lemma_4_9_assumpts sa not_perfect_power
@@ -1481,4 +1490,3 @@ theorem theorem_4_1 (n : ℕ) (ngt1 : n > 1) : n.Prime ↔ AKS_algorithm n = PRI
   constructor
   · exact lemma_4_2 n ngt1
   · exact lemma_4_9 n ngt1
-
