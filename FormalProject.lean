@@ -113,12 +113,16 @@ class Step5Assumptions where
   p : ℕ
   ngt1 : n > 1
   rgt0 : 0 < r
+  hrn : (logb 2 n) ^ 2 < oᵣ r n
   hrp : 1 < oᵣ r p
   hn : n.gcd r = 1
   pgtr : r < p
   p_prime : p.Prime
   hp : p.gcd r = 1
   p_dvd_n : p ∣ n
+  ngt1 : 1 < n
+  ngt0 : 0 < n := Nat.zero_lt_of_lt ngt1
+  h_step_5 : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))
 
 section
 
@@ -238,7 +242,7 @@ lemma introspective_n_div_p (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^
   simp at *
   sorry
 
-lemma lemma_4_6' (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))) : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
+lemma lemma_4_6' : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
   intro m hm f hf
   unfold introspective'
   unfold I at hm
@@ -253,16 +257,16 @@ end
 
 namespace Real
 
-lemma mk_const {x : ℚ} : mk (CauSeq.const abs x) = x := rfl
-
-theorem ratCast_le {x y : ℚ} : (x : ℝ) ≤ (y : ℝ) ↔ x ≤ y := by
-  rw [← mk_const, ← mk_const, mk_le]
-  exact CauSeq.const_le
+-- This theorem should really be in Mathlib already.
+theorem mul_lt_mul_of_le_of_lt {a b c d : ℝ} (h₁ : a ≤ b) (h₂ : c < d) (h₃ : 0 < a) (h₄ : 0 ≤ c) :
+    a * c < b * d :=
+  ((mul_lt_mul_left h₃).mpr h₂).trans_le (mul_le_mul_of_nonneg_right h₁ (le_of_lt (lt_of_le_of_lt h₄ h₂)))
 
 end Real
 
 namespace Nat
 
+-- This theorem should really be in Mathlib already.
 theorem pow_le_pow_of_le' {a n m : Nat} (h : 0 < a) (w : n ≤ m) : a ^ n ≤ a ^ m := by
   by_cases aeq1 : a = 1
   · rw [aeq1, one_pow, one_pow]
@@ -292,6 +296,120 @@ lemma comp_dvd {R : Type*} [CommRing R] {f₁ f₂ g : R[X]} (hg : g.natDegree �
 
 end Polynomial
 
+namespace Set
+
+-- This should really be in Mathlib
+instance instNonemptyElemImage2 {α β γ : Type*} (f : α → β → γ) (s : Set α) (t : Set β) [sne : Nonempty s] [tne : Nonempty t]:
+    Nonempty (Set.image2 f s t) := by
+  rcases sne with ⟨x, xs⟩
+  rcases tne with ⟨y, yt⟩
+  use f x y, x, xs, y, yt
+
+end Set
+
+namespace AdjoinRoot
+
+lemma of_rewrite {R : Type*} [CommRing R] (f : R[X]) (a : R) : AdjoinRoot.of f a = AdjoinRoot.mk f (C a) := rfl
+
+end AdjoinRoot
+
+-- Like the union of `Sym` for all `m ≤ n`.
+def SymUnion (α : Type*) (n : ℕ) :=
+  { s : Multiset α // Multiset.card s ≤ n }
+
+namespace SymUnion
+-- Some lemmas, definitions and instances mimicking those from `Sym`.
+
+section
+
+variable {α : Type*}
+
+/-- The canonical map to `Multiset α` that forgets that `s` has length less then `n` -/
+@[coe] def toMultiset {n : ℕ} (s : SymUnion α n) : Multiset α :=
+  s.1
+
+instance hasCoe (n : ℕ) : CoeOut (SymUnion α n) (Multiset α) :=
+  ⟨SymUnion.toMultiset⟩
+
+theorem coe_injective {n : ℕ} : Function.Injective ((↑) : SymUnion α n → Multiset α) :=
+  Subtype.coe_injective
+
+instance [DecidableEq α] [Fintype α] {n : ℕ} : Fintype (SymUnion α n) :=
+  sorry
+
+def Finset.biUnion' {α β : Type*} [DecidableEq β] [Fintype α] (t : α → Finset β) : Finset β :=
+  Finset.biUnion univ t
+
+-- Similar to Set.iUnion notation.
+notation3 "⋃ᶠ "(...)", "r:60:(scoped f => Finset.biUnion' f) => r
+
+theorem card_disjoint_union {α β : Type*} [Fintype α] [DecidableEq β] (f : α → Finset β) (hp : Pairwise (fun (a₁ a₂ : α) => Disjoint (f a₁) (f a₂))) :
+    Finset.card (⋃ᶠ m : α, f m) = ∑ m, (f m).card := by
+  sorry
+
+noncomputable instance (k : ℕ) : DecidableEq (SymUnion α k) := by
+  exact Classical.typeDecidableEq (SymUnion α k)
+
+lemma univ_split [DecidableEq α] [Fintype α] (k : ℕ) : Finset.map ⟨((↑) : SymUnion α k → Multiset α), coe_injective⟩ (@Finset.univ (SymUnion α k) _) = ⋃ᶠ (i : range (k + 1)), (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _)) := by
+  sorry
+
+lemma univ_disjoint [DecidableEq α] [Fintype α] (k : ℕ) : Pairwise (fun (i₁ i₂ : range (k + 1)) => Disjoint (Finset.map ⟨((↑) : Sym α i₁ → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i₁) _))
+    (Finset.map ⟨((↑) : Sym α i₂ → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i₂) _))) := by
+  sorry
+
+theorem card_sym_union_eq_choose [DecidableEq α] [Fintype α] [Nonempty α] (k : ℕ) :
+    Fintype.card (SymUnion α k) = (Fintype.card α + k).choose k := by
+  have card_α_pos : 0 < Fintype.card α := Fintype.card_pos
+  calc
+    Fintype.card (SymUnion α k) = Finset.card (@Finset.univ (SymUnion α k) _) := by
+      simp only [card_univ]
+    _ = Finset.card (Finset.map ⟨((↑) : SymUnion α k → Multiset α), coe_injective⟩ (@Finset.univ (SymUnion α k) _)) := by
+      simp only [card_univ, card_map]
+    _ = Finset.card (⋃ᶠ (i : range (k + 1)), (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _))) := by
+      rw [univ_split]
+    _ = ∑ (i : range (k + 1)), Finset.card (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _)) := by
+      exact card_disjoint_union _ (univ_disjoint k)
+    _ = ∑ (i : range (k + 1)), Finset.card (@Finset.univ (Sym α i) _) := by
+      simp only [card_map]
+    _ = ∑ (i : range (k + 1)), Fintype.card (Sym α i) := by
+      simp only [card_univ]
+    _ = ∑ (i ∈ range (k + 1)), Fintype.card (Sym α i) := by
+      simp only [univ_eq_attach]
+      have h₁ : ∑ i ∈ (range (k + 1)).attach, Fintype.card (Sym α ↑i) = ∑ i ∈ (range (k + 1)), Fintype.card (Sym α i) := by
+        convert @Finset.sum_attach ℕ ℕ _ (range (k + 1)) (fun i => Fintype.card (Sym α ↑i))
+      rw [h₁]
+    _ = ∑ (i ∈ range (k + 1)), (Fintype.card α + i - 1).choose i := by
+      simp_rw [Sym.card_sym_eq_choose]
+    _ = ∑ (i ∈ range (k + 1)), (i + (Fintype.card α - 1)).choose (Fintype.card α - 1) := by
+      sorry
+    _ = (k + (Fintype.card α - 1) + 1).choose ((Fintype.card α - 1) + 1) := by
+      exact Nat.sum_range_add_choose k (Fintype.card α - 1)
+    _ = (Fintype.card α + k).choose k := by
+      sorry
+
+end
+
+end SymUnion
+
+-- This lemma should really be in Mathlib already.
+lemma exists_natural_m_in_same_modulo_class (i : ℤ) {n : ℕ} (hn : n ≠ 0): ∃ m : ℕ, ∃ k : ℤ, i = m + k * n := by
+  use (i % n).toNat
+  rw [Int.toNat_of_nonneg (Int.emod_nonneg i (by exact_mod_cast hn))]
+  use i / n
+  exact (Int.emod_add_ediv' i n).symm
+
+lemma pos_power_of_finite_order {G : Type*} [Group G] [Fintype G] (i : ℤ) (x : G) :
+    ∃ n : ℕ, x ^ i = x ^ n := by
+  rcases exists_natural_m_in_same_modulo_class i (ne_of_lt (orderOf_pos x)).symm with ⟨n, ⟨k, rfl⟩⟩
+  use n
+  rw [zpow_add, mul_comm, zpow_mul]
+  simp only [zpow_natCast, mul_right_eq_self, pow_orderOf_eq_one, one_zpow]
+
+lemma zmod_val_cast (r i : ℕ) : ∃ k : ℕ, i = (i : ZMod r).val + k * r := by
+  simp only [ZMod.val_natCast]
+  use i / r
+  exact (Nat.mod_add_div' i r).symm
+
 namespace Lemma78
 
 lemma elem_in_set_imp_in_closure {G : Type*} [Monoid G] {S : Set G} {x : G} (hx : x ∈ S) : x ∈ Submonoid.closure S :=
@@ -311,205 +429,208 @@ lemma rgt1 : 1 < sa.r := by
     exact (lt_iff_not_le.mp h₁) orderOf_le_card_univ
   exact Nat.lt_of_le_of_ne sa.rgt0 rne1.symm
 
-lemma ngt0 : 0 < sa.n :=
-  Nat.zero_lt_of_ne_zero (fun hn => (ne_of_lt rgt1) ((Nat.gcd_zero_left sa.r) ▸ hn ▸ sa.hn).symm)
+instance : NeZero sa.p := ⟨Nat.Prime.ne_zero sa.p_prime⟩
 
-instance : Fintype (ZMod sa.p) := @ZMod.fintype sa.p ⟨Nat.Prime.ne_zero sa.p_prime⟩
+instance : NeZero sa.r := ⟨(ne_of_lt (Nat.zero_lt_of_lt rgt1)).symm⟩
+
+instance : Fact (sa.p.Prime) := ⟨sa.p_prime⟩
 
 noncomputable def Qᵣ := cyclotomic sa.r (ZMod sa.p)
 
-lemma Qᵣ_not_unit [Fact (Nat.Prime sa.p)] : ¬IsUnit Qᵣ :=
-  not_isUnit_of_degree_pos Qᵣ (degree_cyclotomic_pos sa.r _ sa.rgt0)
+lemma Qᵣ_not_unit : ¬IsUnit Qᵣ := not_isUnit_of_degree_pos Qᵣ (degree_cyclotomic_pos sa.r _ sa.rgt0)
 
-noncomputable def h [Fact (Nat.Prime sa.p)] : (ZMod sa.p)[X] := Qᵣ.factor
+noncomputable def h : (ZMod sa.p)[X] := Qᵣ.factor
 
-instance h_irr [Fact (Nat.Prime sa.p)] : Fact (Irreducible h) := fact_irreducible_factor Qᵣ
+lemma h_not_zero : h ≠ 0 := Irreducible.ne_zero (irreducible_factor Qᵣ)
 
-lemma h_not_zero [Fact (Nat.Prime sa.p)] : h ≠ 0 := Irreducible.ne_zero (irreducible_factor Qᵣ)
+instance h_irr : Fact (Irreducible h) := fact_irreducible_factor Qᵣ
 
-instance adjoin_h_finite_generated [Fact (Nat.Prime sa.p)] : Module.Finite (ZMod sa.p) (AdjoinRoot h) :=
+instance adjoin_h_finite_generated : Module.Finite (ZMod sa.p) (AdjoinRoot h) :=
   PowerBasis.finite (AdjoinRoot.powerBasis h_not_zero)
 
-instance adjoin_h_finite [Fact (Nat.Prime sa.p)] : Finite (AdjoinRoot h) :=
+instance adjoin_h_finite : Finite (AdjoinRoot h) :=
   Module.finite_of_finite (ZMod sa.p)
 
-noncomputable instance [Fact (Nat.Prime sa.p)] : Fintype (AdjoinRoot h) :=
+noncomputable instance : Fintype (AdjoinRoot h) :=
   Fintype.ofFinite (AdjoinRoot h)
 
-lemma cast_eq_cast_of_cast [Fact (Nat.Prime sa.p)] (n : ℕ) : (↑n : AdjoinRoot h) = (↑(↑n : ZMod sa.p) : AdjoinRoot h) := by
-  simp only [map_natCast]
+lemma h_dvd_x_pow_r_minus_one : h ∣ (X ^ sa.r - 1) :=
+  dvd_trans (factor_dvd_of_not_isUnit Qᵣ_not_unit) (cyclotomic.dvd_X_pow_sub_one sa.r (ZMod sa.p))
 
--- This should really be in Mathlib already
-instance [Fact (Nat.Prime sa.p)] : CharP (AdjoinRoot h) sa.p := by
-  apply (CharP.charP_iff_prime_eq_zero sa.p_prime).mpr
-  have zero_eq_zero : (0 : AdjoinRoot h) = @Nat.cast (AdjoinRoot h) NonAssocSemiring.toNatCast 0 := by
-    simp only [Nat.cast_zero]
-  rw [zero_eq_zero, cast_eq_cast_of_cast, cast_eq_cast_of_cast]
-  simp only [CharP.cast_eq_zero, map_zero, Nat.cast_zero]
+instance : NeZero (sa.r : AdjoinRoot h) := by
+  apply neZero_iff.mpr
+  intro hr
+  apply AdjoinRoot.mk_eq_zero.mp at hr
+  have r_degree : (sa.r : (ZMod sa.p)[X]).natDegree = 0 := Polynomial.natDegree_natCast sa.r
+  replace hr := eq_zero_of_dvd_of_natDegree_lt hr (r_degree ▸ Irreducible.natDegree_pos h_irr.out)
+  have r_casts : (sa.r : (ZMod sa.p)[X]) = C (sa.r : ZMod sa.p) := by
+    simp only [map_natCast]
+  rw [r_casts] at hr
+  apply Polynomial.C_eq_zero.mp at hr
+  apply (ZMod.natCast_zmod_eq_zero_iff_dvd sa.r sa.p).mp at hr
+  have peq1 := Nat.Coprime.eq_one_of_dvd sa.hp hr
+  exact Nat.Prime.ne_one sa.p_prime peq1
 
-lemma p_pow_order_gt_one : 1 < sa.p ^ oᵣ sa.r sa.p :=
-  Nat.one_lt_pow (Nat.not_eq_zero_of_lt sa.hrp) (Nat.Prime.one_lt sa.p_prime)
+lemma map_mk_cyclo_eq_map_of_cyclo : (Polynomial.map (AdjoinRoot.mk h) (cyclotomic sa.r (ZMod sa.p)[X])) = (Polynomial.map (AdjoinRoot.of h) (cyclotomic sa.r (ZMod sa.p))) := by
+  simp only [map_cyclotomic]
 
-theorem deg_h_eq_order [Fact (Nat.Prime sa.p)] : h.natDegree = oᵣ sa.r sa.p := by
+theorem X_primitive_root : IsPrimitiveRoot (AdjoinRoot.mk h X) sa.r := by
+  rw [← Polynomial.isRoot_cyclotomic_iff, ← map_cyclotomic sa.r (AdjoinRoot.mk h)]
+  simp only [AdjoinRoot.mk_X]
+  rw [map_mk_cyclo_eq_map_of_cyclo]
+  refine Polynomial.IsRoot.dvd ?_ (Polynomial.map_dvd (AdjoinRoot.of h) (factor_dvd_of_not_isUnit Qᵣ_not_unit))
+  apply AdjoinRoot.isRoot_root
+
+theorem deg_h_eq_order : h.natDegree = oᵣ sa.r sa.p := by
   sorry
 
-lemma deg_h_gt_one [Fact (Nat.Prime sa.p)] : 1 < h.natDegree := deg_h_eq_order ▸ sa.hrp
+lemma deg_h_gt_one : 1 < h.natDegree := deg_h_eq_order ▸ sa.hrp
 
-lemma x_plus_a_is_unit (a : ℕ) [Fact (Nat.Prime sa.p)] :
-    IsUnit (AdjoinRoot.mk h (X + C (a : ZMod sa.p))) := by
-  apply Ne.isUnit
-  intro x_plus_a_zero
-  apply AdjoinRoot.mk_eq_zero.mp at x_plus_a_zero
-  have deg_le_one : h.natDegree ≤ (X + C (a : ZMod sa.p) : (ZMod sa.p)[X]).natDegree :=
-    natDegree_le_of_dvd x_plus_a_zero (X_add_C_ne_zero (a : ZMod sa.p))
-  rw [natDegree_X_add_C (a : ZMod sa.p)] at deg_le_one
-  exact (lt_iff_not_le.mp deg_h_gt_one) deg_le_one
+--def G : Subgroup (ZMod sa.r)ˣ :=
+--  Subgroup.closure {ZMod.unitOfCoprime sa.n sa.hn, ZMod.unitOfCoprime sa.p sa.hp}
 
-def G : Subgroup (ZMod sa.r)ˣ :=
+def G : Set (ZMod sa.r) := (fun (i : ℕ) => (i : ZMod sa.r)) '' I
+
+def G' : Subgroup (ZMod sa.r)ˣ :=
   Subgroup.closure {ZMod.unitOfCoprime sa.n sa.hn, ZMod.unitOfCoprime sa.p sa.hp}
+
+instance : Nonempty I := by
+  --`infer_instance` does not work, even though this is an instance.
+  apply Set.instNonemptyElemImage2
+
+instance : Nonempty G := by
+  --`infer_instance` does not work, even though this is an instance.
+  apply Set.instNonemptyElemImage
 
 noncomputable def t : ℕ := Nat.card G
 
-lemma t_gt_zero : 0 < t := Nat.card_pos
+lemma tgt0 : 0 < t := Finite.card_pos
 
--- Slightly different from `𝒢` used in the paper, since we need `X + (ℓ + 1)`
-noncomputable def 𝒢' [Fact (Nat.Prime sa.p)] : Submonoid (AdjoinRoot h) :=
-  Submonoid.closure ((fun (i : ℕ) => (AdjoinRoot.mk h (X + C (i : ZMod sa.p)))) '' (range (ℓ + 2)))
+noncomputable def 𝒢 : Submonoid (AdjoinRoot h) :=
+  Submonoid.closure ((fun (i : ℕ) => (AdjoinRoot.mk h (X + C (i : ZMod sa.p)))) '' (range (ℓ + 1)))
 
-noncomputable def 𝒢 := @𝒢' sa ⟨sa.p_prime⟩
-
-noncomputable def 𝒢₂' [Fact (Nat.Prime sa.p)] : Submonoid (AdjoinRoot h) :=
+noncomputable def 𝒢₂ : Submonoid (AdjoinRoot h) :=
   Submonoid.map (AdjoinRoot.mk h) P
 
-noncomputable def 𝒢₂ := @𝒢₂' sa ⟨sa.p_prime⟩
-
-lemma 𝒢_is_𝒢₂ [Fact (Nat.Prime sa.p)] : 𝒢 = 𝒢₂ := by
-  unfold 𝒢 𝒢₂ 𝒢' 𝒢₂' P
-  rw [MonoidHom.map_mclosure (AdjoinRoot.mk h) ((fun (i : ℕ) => (X + C (i : ZMod sa.p))) '' (range (ℓ + 2)))]
+lemma 𝒢_is_𝒢₂ : 𝒢 = 𝒢₂ := by
+  unfold 𝒢 𝒢₂ P
+  rw [MonoidHom.map_mclosure (AdjoinRoot.mk h) ((fun (i : ℕ) => (X + C (i : ZMod sa.p))) '' (range (ℓ + 1)))]
   rw [← Set.image_comp]
   simp only [Function.comp_apply]
 
 def is_power_of (a b : ℕ) : Prop :=
   ∃ k, b ^ k = a
 
-noncomputable def lemma_4_7_helper_f [Fact (Nat.Prime sa.p)] :
-    Sym (Fin (ℓ + 2)) (t - 1) → (AdjoinRoot h) :=
-  fun M => ∏ (i ∈ Multiset.toFinset M), (AdjoinRoot.mk h (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p))) ^ (Multiset.count i M)
+def f₁ : SymUnion (Fin (ℓ + 1)) (t - 1) → Multiset (ZMod sa.p) :=
+  fun M => M.toMultiset
 
-noncomputable def lemma_4_7_helper_f' [Fact (Nat.Prime sa.p)] :
-    Sym (Fin (ℓ + 2)) (t - 1) → (AdjoinRoot h) :=
-  fun M => (Multiset.map (fun i => AdjoinRoot.mk h (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p))) M).prod
+def f₂ : Multiset (ZMod sa.p) → Multiset (ZMod sa.p) :=
+  Multiset.map (fun i => -i)
 
-lemma prod_pow_mk_eq_mk_prod_pow (M : Sym (Fin (ℓ + 2)) (t - 1)) [Fact (Nat.Prime sa.p)] :
-    ∏ (i ∈ Multiset.toFinset M), (AdjoinRoot.mk h (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p))) ^ (Multiset.count i M) =
-    AdjoinRoot.mk h (∏ (i ∈ Multiset.toFinset M), (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ (Multiset.count i M)) := by
-  simp only [map_prod, map_pow]
+noncomputable def f₃ : Multiset (ZMod sa.p) → (ZMod sa.p)[X] :=
+  fun M => (Multiset.map (fun i => (X - C i)) M).prod
 
-def neg_M (M : Sym (Fin (ℓ + 2)) (t - 1)) : Multiset ℤ :=
-  Multiset.map (fun i => -(i : ℤ)) (M : Multiset (Fin (ℓ + 2)))
+noncomputable def lemma_4_7_helper_f : SymUnion (Fin (ℓ + 1)) (t - 1) → (AdjoinRoot h) :=
+  (AdjoinRoot.mk h) ∘ f₃ ∘ f₂ ∘ f₁
 
-def neg_M' (M : Sym (Fin (ℓ + 2)) (t - 1)) : Multiset (ZMod sa.p) :=
-  Multiset.map (fun i => -(i : ZMod sa.p)) (M : Multiset (Fin (ℓ + 2)))
+lemma prod_mk_eq_mk_prod (M : SymUnion (Fin (ℓ + 1)) (t - 1)) :
+    (Multiset.map (fun i => AdjoinRoot.mk h (X + C ((i : Fin (ℓ + 1)) : ZMod sa.p))) M).prod =
+    AdjoinRoot.mk h (Multiset.map (fun i => (X + C ((i : Fin (ℓ + 1)) : ZMod sa.p))) M).prod := by
+  simp only [map_multiset_prod, Multiset.map_map, Function.comp_apply]
 
-lemma neg_M_count (M : Sym (Fin (ℓ + 2)) (t - 1)) (i : Fin (ℓ + 2)) :
-    Multiset.count i M = Multiset.count (-(i : ℤ)) (neg_M M) := by
-  sorry
+lemma mk_f₃_eq_f₃_mk (M : SymUnion (Fin (ℓ + 1)) (t - 1)) :
+    ((AdjoinRoot.mk h) ∘ f₃ ∘ f₂ ∘ f₁) M = ((fun N => (Multiset.map (fun i => AdjoinRoot.mk h (X - C i)) N).prod) ∘ f₂ ∘ f₁) M := by
+  unfold f₃
+  simp only [map_multiset_prod, Multiset.map_map, Function.comp_apply]
 
-lemma neg_M'_count (M : Sym (Fin (ℓ + 2)) (t - 1)) (i : Fin (ℓ + 2)) :
-    Multiset.count i M = Multiset.count (-(i : ZMod sa.p)) (neg_M' M) := by
-  sorry
-
-lemma neg_M_inj {M N : Sym (Fin (ℓ + 2)) (t - 1)} (hMN : neg_M M = neg_M N) : M = N := by
-  sorry
-
-lemma neg_M'_inj {M N : Sym (Fin (ℓ + 2)) (t - 1)} (hMN : neg_M' M = neg_M' N) : M = N := by
-  sorry
-
-lemma prod_M_x_plus_a_eq_prod_neg_M_x_minus_a (M : Sym (Fin (ℓ + 2)) (t - 1)) :
-    ∏ i ∈ Multiset.toFinset M, (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i M =
-    ∏ i ∈ Multiset.toFinset (neg_M M), (X - C ((i : ℤ) : ZMod sa.p)) ^ Multiset.count (-i) (neg_M M) := by
-  simp only [map_natCast, neg_M_count, map_intCast]
-  unfold neg_M
-  simp only [Multiset.pure_def, Multiset.bind_def, Multiset.bind_singleton,
-    Multiset.map_map, Function.comp_apply]
-
-  sorry
-
-lemma prod_M_x_plus_a_eq_prod_neg_M_x_minus_a' (M : Sym (Fin (ℓ + 2)) (t - 1)) :
-    ∏ i ∈ Multiset.toFinset M, (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i M =
-    ∏ i ∈ Multiset.toFinset (neg_M' M), (X - C (i : ZMod sa.p)) ^ Multiset.count (-i) (neg_M' M) := by
-
-  simp only [map_natCast, neg_M_count, map_intCast]
-  unfold neg_M neg_M'
-  simp only [Multiset.pure_def, Multiset.bind_def, Multiset.bind_singleton,
-    Multiset.map_map, Function.comp_apply]
-
-  sorry
-
-lemma prod_M_roots (M : Sym (Fin (ℓ + 2)) (t - 1)) [Fact (Nat.Prime sa.p)] :
-    (∏ i ∈ Multiset.toFinset M, (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i M).roots = neg_M' M := by
-  --ext x
-  --set y := -x with y_def
-  --rw [neg_eq_iff_eq_neg.mp y_def]
-  --rw [neg_M'_count M (-x)]
-  --rw [count_roots, neg_M'_count x]
-  unfold neg_M'
-  simp
-  sorry
-
-lemma prod_M_roots' (M : Sym (Fin (ℓ + 2)) (t - 1)) [Fact (Nat.Prime sa.p)] :
-    (∏ i ∈ Multiset.toFinset M, (X - C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i M).roots = (M.val : Multiset (ZMod sa.p)) := by
-  simp only [Sym.val_eq_coe, Multiset.pure_def, Multiset.bind_def, Multiset.bind_singleton]
-
-  sorry
-
-lemma lemma_4_7_helper_f_injective [Fact (Nat.Prime sa.p)] :
-    Function.Injective lemma_4_7_helper_f := by
-  intro x y hfxy
-  unfold lemma_4_7_helper_f at *
-  rw [prod_pow_mk_eq_mk_prod_pow, prod_pow_mk_eq_mk_prod_pow] at hfxy
-  apply AdjoinRoot.mk_eq_mk.mp at hfxy
-  have prod_eq_prod : ∏ i ∈ Multiset.toFinset x, (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i x =
-      ∏ i ∈ Multiset.toFinset y, (X + C ((i : Fin (ℓ + 2)) : ZMod sa.p)) ^ Multiset.count i y := by
-    sorry
-  have neg_M'_eq : neg_M' x = neg_M' y := by
-    rw [← prod_M_roots, ← prod_M_roots, prod_eq_prod]
-  exact neg_M'_inj neg_M'_eq
-
-noncomputable instance 𝒢_fintype : Fintype ↑𝒢.carrier := Fintype.ofFinite ↑𝒢.carrier
-
-lemma lemma_4_7_helper_f_image [Fact (Nat.Prime sa.p)] :
-    (Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h))) ⊆ Set.toFinset 𝒢.carrier := by
-  unfold 𝒢 𝒢' lemma_4_7_helper_f
-  simp only [Set.subset_toFinset, coe_image, coe_univ, Set.image_univ]
-  rintro x ⟨y, rfl⟩
-  apply Submonoid.prod_mem
-  intro c _
-  apply Submonoid.pow_mem
-  apply elem_in_set_imp_in_closure'
-  simp only [coe_range, Set.mem_image, Set.mem_Iio]
-  use c, Fin.is_lt c
-
-lemma lemma_4_7' [Fact (Nat.Prime sa.p)] :
-    Nat.card 𝒢 ≥ (t + ℓ).choose (t - 1) := by
+lemma f₁f₂f₃_degree (M : SymUnion (Fin (ℓ + 1)) (t - 1)) : ((f₃ ∘ f₂ ∘ f₁) M).natDegree < t := by
   calc
-    (t + ℓ).choose (t - 1) = ((ℓ + 2) + (t - 1) - 1).choose (t - 1) := by
-      congr
-      have := t_gt_zero
-      omega
-    _ = Fintype.card (Sym (Fin (ℓ + 2)) (t - 1)) := by
-      nth_rw 1 [← Fintype.card_fin (ℓ + 2)]
-      exact (@Sym.card_sym_eq_choose (Fin (ℓ + 2)) _ (t - 1) _).symm
-    _ = (@univ (Sym (Fin (ℓ + 2)) (t - 1)) _).card := by exact rfl
-    --_ = (Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h)ˣ)).card :=
-    _ = (Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h))).card :=
-      (Finset.card_image_of_injective univ lemma_4_7_helper_f_injective).symm
-    _ ≤ (Set.toFinset 𝒢.carrier).card := Finset.card_le_card lemma_4_7_helper_f_image
-    _ = Nat.card 𝒢.carrier.toFinset := (Nat.card_eq_finsetCard (Set.toFinset 𝒢.carrier)).symm
-    _ = Nat.card 𝒢 := by
-      congr
-      simp only [Set.mem_toFinset, Subsemigroup.mem_carrier, Submonoid.mem_toSubsemigroup,
-        Subgroup.mem_toSubmonoid]
+    ((f₃ ∘ f₂ ∘ f₁) M).natDegree = Multiset.card M.toMultiset := by
+      unfold f₃ f₂ f₁
+      simp only [Function.comp_apply, natDegree_multiset_prod_X_sub_C_eq_card, Multiset.card_map, Multiset.pure_def, Multiset.bind_def, Multiset.bind_singleton]
+    _ < t := by
+      exact Nat.lt_of_le_pred tgt0 M.prop
+
+lemma f₁f₂f₃_in_P (M : SymUnion (Fin (ℓ + 1)) (t - 1)) : ((f₃ ∘ f₂ ∘ f₁) M) ∈ P := by
+  unfold f₂ f₁
+  apply Submonoid.multiset_prod_mem
+  intro c hc
+  apply elem_in_set_imp_in_closure
+  simp only [Sym.mem_coe, Multiset.pure_def, Multiset.bind_def, Multiset.bind_singleton, Function.comp_apply,
+    Multiset.map_map, Multiset.mem_map, exists_exists_and_eq_and, map_neg, sub_neg_eq_add] at hc
+  simp only [coe_range, Set.mem_image, Set.mem_Iio]
+  rcases hc with ⟨d, _, hd⟩
+  use d, Fin.is_lt d
+
+lemma f₂_inj : Function.Injective f₂ := fun _ _ hxy => (Multiset.map_injective neg_injective) hxy
+
+lemma sqrt_totient_r_le_sqrt_r : √sa.r.totient ≤ √sa.r := by
+  apply Real.sqrt_le_sqrt
+  exact_mod_cast Nat.totient_le sa.r
+
+lemma oᵣ_lt_r : oᵣ sa.r sa.n ≤ sa.r := by
+  calc
+    oᵣ sa.r sa.n ≤ Fintype.card (ZMod sa.r) := orderOf_le_card_univ
+    _ = sa.r := ZMod.card sa.r
+
+lemma log_n_lt_sqrt_r : logb 2 sa.n < √sa.r := by
+  apply Real.lt_sqrt_of_sq_lt
+  calc
+    (logb 2 sa.n) ^ 2 < oᵣ sa.r sa.n := sa.hrn
+    _ ≤ sa.r := by exact_mod_cast oᵣ_lt_r
+
+lemma ℓltr : (ℓ : ℝ) < sa.r := by
+  calc
+    (ℓ : ℝ) ≤ √sa.r.totient * logb 2 sa.n := by
+      unfold ℓ
+      apply Nat.floor_le
+      apply mul_nonneg
+      · exact sqrt_nonneg Step5Assumptions.r.totient
+      · apply logb_nonneg (by norm_num)
+        exact_mod_cast sa.ngt0
+    _ < √sa.r * √sa.r := by
+      apply Real.mul_lt_mul_of_le_of_lt
+      · exact sqrt_totient_r_le_sqrt_r
+      · exact log_n_lt_sqrt_r
+      · apply sqrt_pos_of_pos
+        exact_mod_cast Nat.totient_pos.mpr sa.rgt0
+      · apply logb_nonneg (by norm_num)
+        exact_mod_cast sa.ngt0
+    _ = sa.r := by
+      exact mul_self_sqrt (Nat.cast_nonneg Step5Assumptions.r)
+
+lemma ℓltp : ℓ < sa.p := by
+  calc
+    ℓ < sa.r := by exact_mod_cast ℓltr
+    _ < sa.p := sa.pgtr
+
+lemma cast_of_cast_of_val_eq_id (n : Fin (ℓ + 1)) : (ZMod.cast ((n : ℕ) : ZMod sa.p) : Fin (ℓ + 1)) = n := by
+  rw [ZMod.cast_eq_val]
+  simp only [ZMod.val_natCast]
+  rw [Nat.mod_eq_of_lt (lt_of_le_of_lt (Nat.le_of_lt_succ n.prop) ℓltp)]
+  simp only [Fin.cast_val_eq_self]
+
+lemma f₁_inj : Function.Injective f₁ := by
+  intro x y hxy
+  unfold f₁ at hxy
+  simp only [Multiset.pure_def, Multiset.bind_def, Multiset.bind_singleton] at hxy
+  have h₁ : Function.Injective (fun (x : Fin (ℓ + 1)) => ((x : ℕ) : ZMod sa.p)) := by
+    intro a b hab
+    simp only at hab
+    apply_fun @ZMod.cast (Fin (ℓ + 1)) at hab
+    rwa [cast_of_cast_of_val_eq_id, cast_of_cast_of_val_eq_id] at hab
+  apply (Multiset.map_injective h₁) at hxy
+  exact SymUnion.coe_injective hxy
+
+lemma f₁f₂f₃_inj {M N : SymUnion (Fin (ℓ + 1)) (t - 1)} (MneqN : M ≠ N) :
+    (f₃ ∘ f₂ ∘ f₁) M ≠ (f₃ ∘ f₂ ∘ f₁) N := by
+  contrapose! MneqN
+  unfold f₃ at *
+  simp only [Function.comp_apply] at MneqN
+  apply_fun (fun p => p.roots) at MneqN
+  rw [Polynomial.roots_multiset_prod_X_sub_C, Polynomial.roots_multiset_prod_X_sub_C] at MneqN
+  apply f₂_inj at MneqN
+  exact f₁_inj MneqN
 
 def I_hat_fun : Fin (⌊√t⌋₊ + 1) → Fin (⌊√t⌋₊ + 1) → ℕ :=
   fun i => fun j => (sa.n / sa.p) ^ (i : ℕ) * sa.p ^ (j : ℕ)
@@ -521,6 +642,219 @@ lemma I_hat_in_I {m : ℕ} : m ∈ I_hat → m ∈ I := by
   intro hm
   rcases Finset.mem_image₂.mp hm with ⟨i, _, j, _, hij⟩
   use i, trivial, j, trivial, hij
+
+def introspective'' (m : ℕ) (f : (ZMod sa.p)[X]) : Prop :=
+  AdjoinRoot.mk h (f ^ m) = AdjoinRoot.mk h (f.comp (X ^ m))
+
+lemma lemma_4_6'' {m : ℕ} {f : (ZMod sa.p)[X]} (m_in_I : m ∈ I) (f_in_P : f ∈ P) :
+  introspective'' m f := by
+  have hi := lemma_4_6' m m_in_I f f_in_P
+  unfold introspective'' introspective' at *
+  simp only [AdjoinRoot.mk_eq_mk] at *
+  exact dvd_trans h_dvd_x_pow_r_minus_one hi
+
+lemma I_coprime_r {x : ℕ} (hx : x ∈ I) : x.Coprime sa.r := by
+  rcases Set.mem_image2.mp hx with ⟨i, _, j, _, hij⟩
+  unfold I_fun at hij
+  rw [← hij]
+  apply Nat.Coprime.mul
+  · apply Nat.Coprime.pow_left
+    exact Nat.Coprime.coprime_div_left sa.hn sa.p_dvd_n
+  · apply Nat.Coprime.pow_left
+    exact sa.hp
+
+lemma I_rewrite' (i j : ℕ) : (sa.n / sa.p) ^ (i : ℕ) * sa.p ^ (i : ℕ) * sa.p ^ (j : ℕ) =
+    sa.n ^ (i : ℕ) * sa.p ^ (j : ℕ) := by
+  rw [Nat.div_pow sa.p_dvd_n, Nat.div_mul_cancel (pow_dvd_pow_of_dvd sa.p_dvd_n i)]
+
+lemma I_rewrite {x : ℕ} (hx : x ∈ I) :
+  ∃ i j : ℤ, (ZMod.unitOfCoprime sa.n sa.hn) ^ i * (ZMod.unitOfCoprime sa.p sa.hp) ^ j = ZMod.unitOfCoprime x (I_coprime_r hx) := by
+  rcases Set.mem_image2.mp hx with ⟨i, _, j, _, hij⟩
+  unfold I_fun at *
+  simp_rw [← hij]
+  use i, j - (i : ℤ)
+  apply Units.eq_iff.mp
+  simp only [Units.val_mul, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Nat.cast_mul, Nat.cast_pow]
+  rw [zpow_natCast_sub_natCast]
+  field_simp
+  rw [mul_assoc]
+  nth_rw 2 [mul_comm]
+  rw [← mul_assoc]
+  norm_cast
+  rw [I_rewrite' i j]
+
+lemma G_eq_G' : G = Units.val '' G'.carrier := by
+  ext x
+  constructor
+  · rintro ⟨k, k_in_I, rfl⟩
+    simp only [Set.mem_image, Subsemigroup.mem_carrier, Submonoid.mem_toSubsemigroup,
+      Subgroup.mem_toSubmonoid]
+    unfold G'
+    simp [Subgroup.mem_closure_pair]
+    rcases I_rewrite k_in_I with ⟨i, j, hij⟩
+    use i, j
+    norm_cast
+    rw [hij]
+    simp only [ZMod.coe_unitOfCoprime]
+  · rintro ⟨k, hk, rfl⟩
+    rcases Subgroup.mem_closure_pair.mp hk with ⟨i, j, rfl⟩
+    push_cast
+    rcases pos_power_of_finite_order i (ZMod.unitOfCoprime sa.n sa.hn) with ⟨i', hi'⟩
+    rcases pos_power_of_finite_order j (ZMod.unitOfCoprime sa.p sa.hp) with ⟨j', hj'⟩
+    rw [hi', hj']
+    simp [Units.val_pow_eq_pow_val]
+    norm_cast
+    rw [← I_rewrite']
+    use ((Step5Assumptions.n / Step5Assumptions.p) ^ i' * Step5Assumptions.p ^ i' * Step5Assumptions.p ^ j')
+    simp only [Nat.cast_mul, Nat.cast_pow, and_true]
+    rw [mul_assoc, ← pow_add]
+    use i', trivial, i' + j', trivial
+    rfl
+
+lemma card_G_eq_card_G' : Nat.card G = Nat.card G' := by
+  rw [G_eq_G', Nat.card_image_of_injective Units.ext]
+  exact rfl
+
+noncomputable def Q_helper (f : (ZMod sa.p)[X]) : (AdjoinRoot h)[X] := Polynomial.map (AdjoinRoot.of h) f
+
+lemma Q_helper_support (f : (ZMod sa.p)[X]) : (Q_helper f).support = f.support := by
+  unfold Q_helper
+  apply support_map_of_injective f
+  exact AdjoinRoot.coe_injective'
+
+lemma Q_helper_coeff (f : (ZMod sa.p)[X]) (n : ℕ) : (Q_helper f).coeff n = f.coeff n := by
+  unfold Q_helper
+  simp only [coeff_map]
+
+lemma Q_helper_eval (f a : (ZMod sa.p)[X]) : eval (AdjoinRoot.mk h a) (Q_helper f) = AdjoinRoot.mk h (f.comp a) := by
+  unfold Polynomial.eval Polynomial.comp
+  rw [Polynomial.eval₂_def, Polynomial.eval₂_def]
+  simp only [RingHom.id_apply]
+  unfold Polynomial.sum
+  simp_rw [Q_helper_support, Q_helper_coeff, AdjoinRoot.of_rewrite, ← RingHom.map_pow, ← RingHom.map_mul, ← map_sum]
+
+noncomputable def Q (f g : (ZMod sa.p)[X]) := Q_helper (f - g)
+
+lemma Q_degree {f g : (ZMod sa.p)[X]} (hf : f.natDegree < t) (hg : g.natDegree < t) : (Q f g).natDegree < t := by
+  calc
+    (Polynomial.map (AdjoinRoot.of h) (f - g)).natDegree ≤ (f - g).natDegree := Polynomial.natDegree_map_le (AdjoinRoot.of h) (f - g)
+    _ ≤ max (t - 1) (t - 1) := Polynomial.natDegree_sub_le_of_le (Nat.le_sub_one_of_lt hf) (Nat.le_sub_one_of_lt hg)
+    _ < t := Nat.max_lt.mpr ⟨Nat.sub_one_lt_of_lt hf, Nat.sub_one_lt_of_lt hf⟩
+
+noncomputable def G_power_function : G → (AdjoinRoot h) :=
+  fun g => AdjoinRoot.mk h X ^ (g.val.val : ℕ)
+
+lemma G_power_function_injective : Function.Injective G_power_function := by
+  unfold G_power_function
+  intro x y hxy
+  simp only at hxy
+  have x_val_val_val_lt_r : x.val.val < sa.r := ZMod.val_lt x.val
+  have y_val_val_val_lt_r : y.val.val < sa.r := ZMod.val_lt y.val
+  apply IsPrimitiveRoot.pow_inj X_primitive_root x_val_val_val_lt_r y_val_val_val_lt_r at hxy
+  apply_fun ((↑) : ℕ → ZMod sa.r) at hxy
+  simp only [ZMod.natCast_val, ZMod.cast_id', id_eq] at hxy
+  exact Subtype.ext hxy
+
+noncomputable instance : Fintype (Set.range G_power_function) := Fintype.ofFinite _
+
+lemma x_pow_r_eq_1 : AdjoinRoot.mk h (X ^ sa.r) = 1 := by
+  apply (@sub_left_inj _ _ 1 (AdjoinRoot.mk h (X ^ sa.r)) 1).mp
+  rw [sub_self]
+  exact AdjoinRoot.mk_eq_zero.mpr h_dvd_x_pow_r_minus_one
+
+lemma Q_roots {f g : (ZMod sa.p)[X]} (f_in_P : f ∈ P) (g_in_P : g ∈ P) (fneg : f ≠ g) (feqg : (AdjoinRoot.mk h) f = (AdjoinRoot.mk h) g) :
+    (Set.range G_power_function).toFinset.val ≤ (Q f g).roots := by
+  apply Multiset.le_iff_count.mpr
+  intro a
+  by_cases ha : a ∈ (Set.range G_power_function).toFinset
+  · have Qneq0 : Q f g ≠ 0 := by
+      unfold Q Q_helper
+      intro hfg
+      apply (Polynomial.map_eq_zero_iff AdjoinRoot.coe_injective').mp at hfg
+      rw [sub_eq_zero] at hfg
+      exact fneg hfg
+    have haQ : a ∈ (Q f g).roots := by
+      apply (Polynomial.mem_roots_iff_aeval_eq_zero Qneq0).mpr
+      unfold Q
+      rw [Polynomial.coe_aeval_eq_eval]
+      simp only [Set.mem_toFinset, Set.mem_range, Subtype.exists] at ha
+      rcases ha with ⟨k, ⟨i, i_in_I, rfl⟩, rfl⟩
+      have X_pow_i_cast_val_eq_X_pow : AdjoinRoot.mk h (X ^ (i : ZMod sa.r).val) = AdjoinRoot.mk h (X ^ i) := by
+        rcases zmod_val_cast sa.r i with ⟨k, hk⟩
+        nth_rw 2 [hk]
+        rw [pow_add, map_mul, mul_comm k, pow_mul, map_pow (AdjoinRoot.mk h) (X ^ sa.r), x_pow_r_eq_1, one_pow, mul_one]
+      unfold G_power_function
+      simp only
+      rw [← map_pow, X_pow_i_cast_val_eq_X_pow, Q_helper_eval]
+      have f_i_introspective := lemma_4_6'' i_in_I f_in_P
+      have g_i_introspective := lemma_4_6'' i_in_I g_in_P
+      unfold introspective'' at *
+      simp only [sub_comp, map_sub]
+      calc
+        (AdjoinRoot.mk h) (f.comp (X ^ i)) - (AdjoinRoot.mk h) (g.comp (X ^ i)) = (AdjoinRoot.mk h) (f ^ i) - (AdjoinRoot.mk h) (g ^ i) := by
+          rw [f_i_introspective, g_i_introspective]
+        _ = (AdjoinRoot.mk h f) ^ i - (AdjoinRoot.mk h g) ^ i := by
+          rw [map_pow, map_pow]
+        _ = 0 := by
+          rw [feqg, sub_self]
+    calc
+      Multiset.count a (Set.range G_power_function).toFinset.val = 1 := Multiset.count_eq_one_of_mem (Finset.nodup (Set.range G_power_function).toFinset) ha
+      _ ≤ Multiset.count a (Q f g).roots := Multiset.one_le_count_iff_mem.mpr haQ
+  · calc
+      Multiset.count a (Set.range G_power_function).toFinset.val = 0 := Multiset.count_eq_zero.mpr ha
+      _ ≤ Multiset.count a (Q f g).roots := Nat.zero_le _
+
+lemma degree_lt_t_inj {f g : (ZMod sa.p)[X]} (f_in_P : f ∈ P) (g_in_P : g ∈ P) (hf : f.natDegree < t) (hg : g.natDegree < t) (fneg : f ≠ g) :
+    AdjoinRoot.mk h f ≠ AdjoinRoot.mk h g := by
+  by_contra! feqg
+  have Qdegree_ge_t : t ≤ (Q f g).natDegree := by
+    calc
+      t = Nat.card G := rfl
+      _ = Nat.card (Set.range G_power_function) := (Nat.card_range_of_injective G_power_function_injective).symm
+      _ = Finset.card (Set.range G_power_function).toFinset := Nat.card_eq_card_toFinset (Set.range G_power_function)
+      _ = Multiset.card (Set.range G_power_function).toFinset.val := Finset.card_def (Set.range G_power_function).toFinset
+      _ ≤ Multiset.card (Q f g).roots := Multiset.card_le_card (Q_roots f_in_P g_in_P fneg feqg)
+      _ ≤ (Q f g).natDegree := Polynomial.card_roots' (Q f g)
+  exact lt_iff_not_le.mp (Q_degree hf hg) Qdegree_ge_t
+
+lemma lemma_4_7_helper_f_injective :
+    Function.Injective lemma_4_7_helper_f := by
+  intro x y hfxy
+  unfold lemma_4_7_helper_f at *
+  by_contra! xney
+  exact degree_lt_t_inj (f₁f₂f₃_in_P x) (f₁f₂f₃_in_P y) (f₁f₂f₃_degree x) (f₁f₂f₃_degree y) (f₁f₂f₃_inj xney) hfxy
+
+noncomputable instance 𝒢_fintype : Fintype ↑𝒢.carrier := Fintype.ofFinite ↑𝒢.carrier
+
+lemma lemma_4_7_helper_f_image :
+    (Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h))) ⊆ Set.toFinset 𝒢.carrier := by
+  unfold 𝒢 lemma_4_7_helper_f
+  simp only [Set.image_univ, coe_image, coe_univ, Set.subset_toFinset]
+  rintro x ⟨y, rfl⟩
+  simp only [Subsemigroup.mem_carrier, Submonoid.mem_toSubsemigroup, mk_f₃_eq_f₃_mk]
+  unfold f₂ f₁
+  simp only [coe_range, Function.comp_apply, map_natCast, map_add, AdjoinRoot.mk_X, Multiset.pure_def, Multiset.bind_def,
+    Multiset.bind_singleton, Multiset.map_map, Function.comp_apply, map_sub, AdjoinRoot.mk_C,
+    map_neg, sub_neg_eq_add]
+  apply Submonoid.multiset_prod_mem
+  intro c hc
+  apply elem_in_set_imp_in_closure
+  simp only [Multiset.mem_map, Sym.mem_coe] at hc
+  simp only [coe_range, Set.mem_image, Set.mem_Iio]
+  rcases hc with ⟨d, _, hd⟩
+  use d, Fin.is_lt d
+
+lemma lemma_4_7' : Nat.card 𝒢 ≥ (t + ℓ).choose (t - 1) := by
+  calc
+    (t + ℓ).choose (t - 1) = (ℓ + 1 + (t - 1)).choose (t - 1) := by congr 1; have := tgt0; omega
+    _ = (Fintype.card (Fin (ℓ + 1)) + (t - 1)).choose (t - 1) := by rw [Fintype.card_fin]
+    _ = Fintype.card (SymUnion (Fin (ℓ + 1)) (t - 1)) := (SymUnion.card_sym_union_eq_choose (t - 1)).symm
+    _ = (@univ (SymUnion (Fin (ℓ + 1)) (t - 1)) _).card := rfl
+    _ = (Finset.image lemma_4_7_helper_f univ : Finset ((AdjoinRoot h))).card :=
+      (Finset.card_image_of_injective univ lemma_4_7_helper_f_injective).symm
+    _ ≤ (Set.toFinset 𝒢.carrier).card := Finset.card_le_card lemma_4_7_helper_f_image
+    _ = Nat.card 𝒢.carrier.toFinset := (Nat.card_eq_finsetCard (Set.toFinset 𝒢.carrier)).symm
+    _ = Nat.card 𝒢 := by congr; simp only [Set.mem_toFinset, Subsemigroup.mem_carrier, Submonoid.mem_toSubsemigroup, Subgroup.mem_toSubmonoid]
 
 lemma exists_q_coprime (not_p_power : ¬is_power_of sa.n sa.p) : ∃ q : ℕ, q.Prime ∧ q.Coprime sa.p ∧ 0 < sa.n.factorization q := by
   unfold is_power_of at *
@@ -534,12 +868,12 @@ lemma exists_q_coprime (not_p_power : ¬is_power_of sa.n sa.p) : ∃ q : ℕ, q.
     apply (Nat.coprime_primes q_prime sa.p_prime ).mpr
     rintro rfl
     rw [← pow_succ] at hq
-    exact Nat.pow_succ_factorization_not_dvd (ne_of_lt ngt0).symm sa.p_prime hq
+    exact Nat.pow_succ_factorization_not_dvd (ne_of_lt sa.ngt0).symm sa.p_prime hq
   use q, q_prime, q_coprime_p
-  apply Nat.Prime.factorization_pos_of_dvd q_prime (ne_of_lt ngt0).symm
+  apply Nat.Prime.factorization_pos_of_dvd q_prime (ne_of_lt sa.ngt0).symm
   exact dvd_trans (Nat.dvd_mul_left q _) hq
 
-lemma n_div_p_pos : 0 < sa.n / sa.p := (Nat.div_pos (Nat.le_of_dvd ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime))
+lemma n_div_p_pos : 0 < sa.n / sa.p := (Nat.div_pos (Nat.le_of_dvd sa.ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime))
 
 lemma I_hat_fun_inj (not_p_power : ¬is_power_of sa.n sa.p) : Function.Injective2 I_hat_fun := by
   intro i₁ j₁ i₂ j₂ heq
@@ -578,50 +912,20 @@ lemma I_hat_fun_inj (not_p_power : ¬is_power_of sa.n sa.p) : Function.Injective
   have i₁eqj₁ : (i₁ : ℕ) = j₁ := Nat.mul_right_cancel hq factorization_eq
   have p_pow_eq : sa.p ^ (i₂ : ℕ) = sa.p ^ (j₂ : ℕ) := by
     rw [i₁eqj₁] at heq
-    apply Nat.mul_left_cancel (pow_pos (Nat.div_pos (Nat.le_of_dvd ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime)) j₁) at heq
+    apply Nat.mul_left_cancel (pow_pos (Nat.div_pos (Nat.le_of_dvd sa.ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime)) j₁) at heq
     exact heq
   have i₂eqj₂ : (i₂ : ℕ) = j₂ := Nat.pow_right_injective (Nat.Prime.two_le sa.p_prime) p_pow_eq
   constructor
   · exact Fin.eq_of_val_eq i₁eqj₁
   · exact Fin.eq_of_val_eq i₂eqj₂
 
-lemma I_hat_coprime_r {x : ℕ} (hx : x ∈ I_hat) : x.Coprime sa.r := by
-  rcases Finset.mem_image₂.mp hx with ⟨i, _, j, _, hij⟩
-  unfold I_hat_fun at hij
-  rw [← hij]
-  apply Nat.Coprime.mul
-  · apply Nat.Coprime.pow_left
-    exact Nat.Coprime.coprime_div_left sa.hn sa.p_dvd_n
-  · apply Nat.Coprime.pow_left
-    exact sa.hp
-
-lemma I_hat_rewrite' (i j : Fin (⌊√t⌋₊ + 1)): (sa.n / sa.p) ^ (i : ℕ) * sa.p ^ (i : ℕ) * sa.p ^ (j : ℕ) =
-    sa.n ^ (i : ℕ) * sa.p ^ (j : ℕ) := by
-  rw [Nat.div_pow sa.p_dvd_n, Nat.div_mul_cancel (pow_dvd_pow_of_dvd sa.p_dvd_n i)]
-
-lemma I_hat_rewrite {x : ℕ} (hx : x ∈ I_hat) :
-  ∃ i j : ℤ, (ZMod.unitOfCoprime sa.n sa.hn) ^ i * (ZMod.unitOfCoprime sa.p sa.hp) ^ j = ZMod.unitOfCoprime x (I_hat_coprime_r hx) := by
-  rcases Finset.mem_image₂.mp hx with ⟨i, _, j, _, hij⟩
-  unfold I_hat_fun at *
-  simp_rw [← hij]
-  use i, j - (i : ℤ)
-  apply Units.eq_iff.mp
-  simp only [Units.val_mul, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Nat.cast_mul, Nat.cast_pow]
-  rw [zpow_natCast_sub_natCast]
-  field_simp
-  rw [mul_assoc]
-  nth_rw 2 [mul_comm]
-  rw [← mul_assoc]
-  norm_cast
-  rw [I_hat_rewrite' i j]
-
-def I_hat_proj_fun : I_hat → G :=
-  fun x => ⟨ZMod.unitOfCoprime x.val (I_hat_coprime_r x.prop), (Subgroup.mem_closure_pair.mpr (I_hat_rewrite x.prop))⟩
+def I_hat_proj_fun : I_hat → G' :=
+  fun x => ⟨ZMod.unitOfCoprime x.val (I_coprime_r (I_hat_in_I x.prop)), (Subgroup.mem_closure_pair.mpr (I_rewrite (I_hat_in_I x.prop)))⟩
 
 lemma floor_sqrt_ineq : (⌊√t⌋₊ + 1) * (⌊√t⌋₊ + 1) > (t : ℝ) := by
   calc
     (⌊√t⌋₊ + 1) * (⌊√t⌋₊ + 1) > √t * √t := mul_self_lt_mul_self (sqrt_nonneg ↑t) (Nat.lt_floor_add_one √↑t)
-    _ = t := mul_self_sqrt (by exact_mod_cast le_of_lt t_gt_zero)
+    _ = t := mul_self_sqrt (by exact_mod_cast le_of_lt tgt0)
 
 lemma card_G_lt_card_I_hat (not_p_power : ¬is_power_of sa.n sa.p) : Nat.card I_hat > Nat.card G := by
   calc
@@ -633,7 +937,7 @@ lemma card_G_lt_card_I_hat (not_p_power : ¬is_power_of sa.n sa.p) : Nat.card I_
     _ = Nat.card G := rfl
 
 lemma exists_m₁_m₂ (not_p_power : ¬is_power_of sa.n sa.p) : ∃ (m₁ m₂ : ℕ), m₁ ∈ I_hat ∧ m₂ ∈ I_hat ∧ m₁ ≡ m₂ [MOD sa.r] ∧ m₁ > m₂ := by
-  rcases Function.not_injective_iff.mp (not_inj_of_card_le_card (card_G_lt_card_I_hat not_p_power) I_hat_proj_fun) with ⟨m₁, m₂, hm₁m₂, m₁neqm₂⟩
+  rcases Function.not_injective_iff.mp (not_inj_of_card_le_card (card_G_eq_card_G' ▸ card_G_lt_card_I_hat not_p_power) I_hat_proj_fun) with ⟨m₁, m₂, hm₁m₂, m₁neqm₂⟩
   wlog m₁gtm₂ : m₁ > m₂ generalizing m₁ m₂
   · exact this m₂ m₁ hm₁m₂.symm m₁neqm₂.symm (lt_of_le_of_ne (le_of_not_lt m₁gtm₂) m₁neqm₂)
   use m₁, m₂, m₁.prop, m₂.prop
@@ -650,43 +954,25 @@ lemma in_I_hat_imp_le_n_pow_sqrt_t {m : ℕ} (hm : m ∈ I_hat) : m ≤ sa.n ^ �
       exact hij.symm
     _ ≤ (sa.n / sa.p) ^ ⌊√t⌋₊ * sa.p ^ ⌊√t⌋₊ := by
       apply mul_le_mul_of_nonneg
-      · exact Nat.pow_le_pow_of_le' (Nat.div_pos (Nat.le_of_dvd ngt0 sa.p_dvd_n) (Nat.Prime.pos sa.p_prime)) (Nat.le_of_lt_succ i.isLt)
+      · exact Nat.pow_le_pow_of_le' n_div_p_pos (Nat.le_of_lt_succ i.isLt)
       · exact Nat.pow_le_pow_of_le' (Nat.Prime.pos sa.p_prime) (Nat.le_of_lt_succ j.isLt)
       · exact Nat.zero_le _
       · exact Nat.zero_le _
     _ = sa.n ^ ⌊√t⌋₊ := by
       rw [← mul_pow, Nat.div_mul_cancel sa.p_dvd_n]
 
-lemma degree_x_pow_m (m : ℕ) [Fact (Nat.Prime sa.p)] : ((X : (AdjoinRoot h)[X]) ^ m).natDegree = m := by
+lemma degree_x_pow_m (m : ℕ) : ((X : (AdjoinRoot h)[X]) ^ m).natDegree = m := by
   simp only [natDegree_pow, natDegree_X, mul_one]
 
-noncomputable def Q' (m₁ m₂ : ℕ) [Fact (Nat.Prime sa.p)] : (AdjoinRoot h)[X] := X ^ m₁ - X ^ m₂
+noncomputable def Q' (m₁ m₂ : ℕ) : (AdjoinRoot h)[X] := X ^ m₁ - X ^ m₂
 
-lemma Q'_degree {m₁ m₂ : ℕ} (m₁gtm₂ : m₁ > m₂) [Fact (Nat.Prime sa.p)] : (Q' m₁ m₂).natDegree = m₁ := by
+lemma Q'_degree {m₁ m₂ : ℕ} (m₁gtm₂ : m₁ > m₂) : (Q' m₁ m₂).natDegree = m₁ := by
   unfold Q'
   nth_rw 2 [← degree_x_pow_m m₁]
   apply Polynomial.natDegree_sub_eq_left_of_natDegree_lt
   simpa only [natDegree_pow, natDegree_X, mul_one]
 
-lemma h_dvd_x_pow_r_minus_one [Fact (Nat.Prime sa.p)] : h ∣ (X^sa.r - 1) :=
-  dvd_trans (factor_dvd_of_not_isUnit Qᵣ_not_unit) (cyclotomic.dvd_X_pow_sub_one sa.r (ZMod sa.p))
-
-lemma x_pow_r_eq_1 [Fact (Nat.Prime sa.p)] : AdjoinRoot.mk h (X ^ sa.r) = 1 := by
-  apply (@sub_left_inj _ _ 1 (AdjoinRoot.mk h (X ^ sa.r)) 1).mp
-  rw [sub_self]
-  exact AdjoinRoot.mk_eq_zero.mpr h_dvd_x_pow_r_minus_one
-
-def introspective'' [Fact (Nat.Prime sa.p)] (m : ℕ) (f : (ZMod sa.p)[X]) : Prop :=
-  AdjoinRoot.mk h (f ^ m) = AdjoinRoot.mk h (f.comp (X ^ m))
-
-lemma lemma_4_6'' [Fact (Nat.Prime sa.p)] {m : ℕ} {f : (ZMod sa.p)[X]} (m_in_I : m ∈ I) (f_in_P : f ∈ P) :
-  introspective'' m f := by
-  have hi := lemma_4_6' m m_in_I f f_in_P
-  unfold introspective'' introspective' at *
-  simp only [AdjoinRoot.mk_eq_mk] at *
-  exact dvd_trans h_dvd_x_pow_r_minus_one hi
-
-lemma elem_𝒢_imp_root {m₁ m₂ : ℕ} (m₁_I_hat : m₁ ∈ I_hat) (m₂_I_hat : m₂ ∈ I_hat) (hm₁m₂r : m₁ ≡ m₂ [MOD sa.r]) (m₁gtm₂ : m₁ > m₂) [Fact (Nat.Prime sa.p)] :
+lemma elem_𝒢_imp_root {m₁ m₂ : ℕ} (m₁_I_hat : m₁ ∈ I_hat) (m₂_I_hat : m₂ ∈ I_hat) (hm₁m₂r : m₁ ≡ m₂ [MOD sa.r]) (m₁gtm₂ : m₁ > m₂) :
   𝒢.carrier.toFinset.val ≤ (Q' m₁ m₂).roots := by
   apply Multiset.le_iff_count.mpr
   intro f
@@ -735,20 +1021,14 @@ lemma lemma_4_8' [Fact (Nat.Prime sa.p)] (not_p_power : ¬is_power_of sa.n sa.p)
     _ ≤ sa.n ^ ⌊√t⌋₊ := in_I_hat_imp_le_n_pow_sqrt_t m₁_I_hat
 
 lemma lemma_4_8_glue : sa.n ^ ⌊√t⌋₊ ≤ (sa.n : ℝ) ^ √t := by
-  have cast_n_ge_1 : 1 ≤ (sa.n : ℝ) := by exact_mod_cast ngt0
-  have floor_sqrt_sq_le_t : ((⌊√↑t⌋₊ ^ 2 : ℚ) : ℝ) ≤ ((t : ℚ) : ℝ) := by
-    simp only [nat_floor_real_sqrt_eq_nat_sqrt]
-    apply ratCast_le.mpr
-    exact_mod_cast Nat.sqrt_le' t
-  have floor_sqrt_le_sqrt : ⌊√t⌋₊ ≤ √t := by
-    apply le_sqrt_of_sq_le
-    exact_mod_cast floor_sqrt_sq_le_t
+  have cast_n_ge_1 : 1 ≤ (sa.n : ℝ) := by exact_mod_cast sa.ngt0
+  have floor_sqrt_le_sqrt : ⌊√t⌋₊ ≤ √t := Nat.floor_le (sqrt_nonneg ↑t)
   exact_mod_cast Real.rpow_le_rpow_of_exponent_le cast_n_ge_1 floor_sqrt_le_sqrt
 
 end
 
 lemma lemma_4_7 (sa : Step5Assumptions) : Nat.card 𝒢 ≥ (t + ℓ).choose (t - 1) :=
-  @lemma_4_7' sa ⟨sa.p_prime⟩
+  @lemma_4_7' sa
 
 lemma lemma_4_8 (sa : Step5Assumptions) (not_p_power : ¬is_power_of sa.n sa.p) :
     Nat.card 𝒢 ≤ (sa.n : ℝ) ^ √t := by
@@ -759,7 +1039,7 @@ lemma lemma_4_8 (sa : Step5Assumptions) (not_p_power : ¬is_power_of sa.n sa.p) 
 end Lemma78
 
 
-
+section
 
 variable (sa : Step5Assumptions)
 
@@ -1080,6 +1360,8 @@ lemma lemma_4_9_assumpts (sa : Step5Assumptions) (not_p_power: ¬perfect_power s
         use sa.p
       exact not_p_power h2
 
+end
+
 lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime := by
   -- in the paper lemma 4.9 starts with various assumptions on n and p
   -- these assumptions get introduced in the paper between the proof of lemma 4.3 and definition 4.4
@@ -1199,3 +1481,4 @@ theorem theorem_4_1 (n : ℕ) (ngt1 : n > 1) : n.Prime ↔ AKS_algorithm n = PRI
   constructor
   · exact lemma_4_2 n ngt1
   · exact lemma_4_9 n ngt1
+
