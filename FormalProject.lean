@@ -104,78 +104,8 @@ lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
 lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
   sorry
 
-
-
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
     ∃ r : ℕ, r ≤ max 3 ⌈(logb 2 n)^5⌉₊ ∧ oᵣ r n > (logb 2 n)^2 := sorry
-
-def introspective (m r p: ℕ) (f : ℤ[X]) : Prop :=
-    ((f ^ m : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (p : ℤ)} : Set ℤ[X]))
-        = (f.comp (Polynomial.X ^ m) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (p : ℤ)} : Set ℤ[X]))
-
-lemma quot_prod (f g q r : ℤ[X]) (p : ℕ) (_ : Nat.Prime p) (q_dvd_r : q ∣ r) :
-  ((f : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({r, C (p : ℤ)} : Set ℤ[X])) = (g : ℤ[X]) → ((f : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({q, C (p : ℤ)} : Set ℤ[X])) = (g : ℤ[X]) := by
-  intro hr
-  rw [Ideal.Quotient.eq] at *
-  rw [Ideal.mem_span_pair] at *
-  rw [dvd_def] at q_dvd_r
-  obtain ⟨c, q_dvd_r⟩ := q_dvd_r
-  obtain ⟨a,b,hr⟩ := hr
-  rw [q_dvd_r, mul_comm q c, ← mul_assoc] at hr
-  use (a * c), b
-
-lemma introspec_pow (m r p : ℕ) (f : ℤ[X]) : (introspective m r p f) → ∀ q : ℕ,
-  (((f.comp (Polynomial.X ^ q))^ m : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^(q*r) - 1, C (p : ℤ)} : Set ℤ[X]))
-    = (f.comp (Polynomial.X ^ (m*q)) : ℤ[X]) := by
-  intro hm q
-  unfold introspective at *
-  rw [pow_mul, mul_comm, pow_mul]
-  rw [Ideal.Quotient.eq, Ideal.mem_span_pair] at *
-  obtain ⟨am, bm, hm⟩ := hm
-  rw [← sub_eq_zero] at hm
-  have polcomp : (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))) = 0 ∨ Polynomial.eval ((X ^ q : ℤ[X]).coeff 0) (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))) = 0 ∧ (X ^ q : ℤ[X]) = Polynomial.C ((X ^ q : ℤ[X]).coeff 0) → (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))).comp (X ^ q) = 0 := by exact (Iff.symm comp_eq_zero_iff).1
-  have compzero : (am * (X ^ r - 1) + bm * C (p : ℤ) - (f ^ m - comp f (X ^ m))).comp (X ^ q) = 0 := by
-    apply polcomp
-    left
-    exact hm
-  simp at compzero
-  rw [sub_eq_zero, Polynomial.comp_assoc, Polynomial.X_pow_comp] at compzero
-  use (am.comp (X ^ q)), (bm.comp (X ^ q))
-  simpa
-
-lemma lemma_4_5 (m m' r p : ℕ) (pprime : Nat.Prime p) (f : ℤ[X]) (hm : introspective m r p f) (hm' : introspective m' r p f) : introspective (m * m') r p f := by
-  have hmm' : ((f.comp (Polynomial.X ^ m) ^ m' : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^(m * r) - 1, C (p : ℤ)} : Set ℤ[X]))
-      = (f.comp (Polynomial.X ^ (m' * m) : ℤ[X])) := by
-      simp at *
-      exact introspec_pow m' r p f hm' m
-  unfold introspective at *
-  simp at *
-  rw [pow_mul,hm]
-  have xr_dvd_xmr : ((X ^ r + C (-1 : ℤ)) : ℤ[X]) ∣ ((X^(m * r) + C (-1 : ℤ)) : ℤ[X]) := by
-    let f : ℤ[X] := X ^ r - 1
-    let g : ℤ[X] := ∑ i ∈ Finset.range m, X ^ (i * r)
-    have : f * g = X ^ (m * r) + C (-1) := by
-      simp only [f, g, ← C_1, ← sub_eq_add_neg]
-      have : (∑ i ∈ Finset.range m, (X : ℤ[X]) ^ (i * r)) = (∑ i ∈ Finset.range m, (X ^ r) ^ i) := by
-        apply Finset.sum_congr rfl
-        intro i hi
-        rw [pow_mul]
-        ring
-      simp
-      rw [this, mul_geom_sum, ← pow_mul, mul_comm]
-      simp [Mathlib.Tactic.RingNF.add_neg]
-    use g
-    simp [Mathlib.Tactic.RingNF.add_neg] at *
-    rw [← this]
-  simp [Mathlib.Tactic.RingNF.add_neg] at xr_dvd_xmr
-  apply quot_prod _ _ _ _ p pprime xr_dvd_xmr at hmm'
-  rw [mul_comm m m']
-  simp [← hmm']
-
-lemma lemma_4_6 (m r p : ℕ) (_ : Nat.Prime p) (f g : ℤ[X]) (hmf : introspective m r p f) (hmg : introspective m r p g) : introspective m r p (f * g) := by
-  unfold introspective at *
-  simp [mul_pow, ← hmf, ← hmg]
-
 
 class Step5Assumptions where
   r : ℕ
@@ -199,6 +129,68 @@ noncomputable def ℓ : ℕ := Nat.floor (√sa.r.totient * logb 2 sa.n)
 def introspective' (m : ℕ) (f : (ZMod sa.p)[X]) : Prop :=
   AdjoinRoot.mk (X ^ sa.r - 1) (f ^ m) = AdjoinRoot.mk (X ^ sa.r - 1) (f.comp (X ^ m))
 
+lemma quot_prod (f g q r : (ZMod sa.p)[X]) (q_dvd_r : q ∣ r) :
+  AdjoinRoot.mk r f = AdjoinRoot.mk r g → AdjoinRoot.mk q f = AdjoinRoot.mk q g := by
+  intro hr
+  rw [AdjoinRoot.mk_eq_mk] at *
+  exact dvd_trans q_dvd_r hr
+
+lemma no_zero_div : NoZeroDivisors (ZMod sa.p) := by
+  have : Fact sa.p.Prime := ⟨sa.p_prime⟩
+  exact inferInstance
+
+lemma introspec_pow (f : (ZMod sa.p)[X]) (m : ℕ) : (introspective' m f) → ∀ q : ℕ,
+  AdjoinRoot.mk (X^(q*sa.r) - 1) ((f.comp (X ^ q)) ^ m) = AdjoinRoot.mk (X^(q*sa.r) - 1) (f.comp (Polynomial.X ^(m*q))) := by
+  intro hm q
+  unfold introspective' at hm
+  rw [pow_mul, mul_comm, pow_mul]
+  rw [AdjoinRoot.mk_eq_mk] at *
+  rw [dvd_iff_exists_eq_mul_left] at *
+  obtain ⟨c,hm⟩ := hm
+  rw [← sub_eq_zero] at hm
+  haveI : NoZeroDivisors (ZMod sa.p) := by exact no_zero_div
+  have polcomp : (f ^ m - f.comp (X ^ m) - c * (X ^ sa.r - 1)) = 0 ∨ Polynomial.eval ((X ^ q : (ZMod sa.p)[X]).coeff 0) (f ^ m - f.comp (X ^ m) - c * (X ^ sa.r - 1)) = 0 ∧ (X ^ q : (ZMod sa.p)[X]) = Polynomial.C ((X ^ q : (ZMod sa.p)[X]).coeff 0) → (f ^ m - f.comp (X ^ m) - c * (X ^ Step5Assumptions.r - 1)).comp (X ^ q) = 0 := by
+    exact (Iff.symm (comp_eq_zero_iff)).1
+  have compzero : (f ^ m - f.comp (X ^ m) - c * (X ^ Step5Assumptions.r - 1)).comp (X ^ q) = 0 := by
+    apply polcomp
+    left
+    exact hm
+  simp at compzero
+  rw [sub_eq_zero, Polynomial.comp_assoc, Polynomial.X_pow_comp] at compzero
+  use c.comp (X ^ q)
+
+lemma lemma_4_5' (m m' : ℕ) (f : (ZMod sa.p)[X]) (hm : introspective' m f) (hm' : introspective' m' f) : introspective' (m * m') f := by
+  have hmm' : AdjoinRoot.mk (X^(m * sa.r) - 1) (f.comp (Polynomial.X ^ m) ^ m') = AdjoinRoot.mk (X^(m * sa.r) - 1) (f.comp (Polynomial.X ^ (m' * m))) := by
+      simp at *
+      exact introspec_pow f m' hm' m
+  unfold introspective' at *
+  simp at *
+  rw [pow_mul,hm]
+  have xr_dvd_xmr : ((X ^ sa.r + C (-1 : (ZMod sa.p))) : (ZMod sa.p)[X]) ∣ ((X^(m * sa.r) + C (-1 : (ZMod sa.p))) : (ZMod sa.p)[X]) := by
+    let f : (ZMod sa.p)[X] := X ^ sa.r - 1
+    let g : (ZMod sa.p)[X] := ∑ i ∈ Finset.range m, X ^ (i * sa.r)
+    have : f * g = X ^ (m * sa.r) + C (-1) := by
+      simp only [f, g, ← C_1, ← sub_eq_add_neg]
+      have : (∑ i ∈ Finset.range m, (X : (ZMod sa.p)[X]) ^ (i * sa.r)) = (∑ i ∈ Finset.range m, (X ^ sa.r) ^ i) := by
+        apply Finset.sum_congr rfl
+        intro i hi
+        rw [pow_mul]
+        ring
+      simp
+      rw [this, mul_geom_sum, ← pow_mul, mul_comm]
+      simp [Mathlib.Tactic.RingNF.add_neg]
+    use g
+    simp [Mathlib.Tactic.RingNF.add_neg] at *
+    rw [← this]
+  simp [Mathlib.Tactic.RingNF.add_neg] at xr_dvd_xmr
+  apply quot_prod _ _ _ _ xr_dvd_xmr at hmm'
+  rw [mul_comm m m']
+  simp [← hmm']
+
+lemma lemma_4_6 (m : ℕ) (f g : (ZMod sa.p)[X]) (hmf : introspective' m f) (hmg : introspective' m g) : introspective' m (f * g) := by
+  unfold introspective' at *
+  simp [mul_pow, ← hmf, ← hmg]
+
 def I_fun : ℕ → ℕ → ℕ := fun i => fun j => (sa.n / sa.p) ^ i * sa.p ^ j
 
 def I : Set ℕ := Set.image2 I_fun Set.univ Set.univ
@@ -206,7 +198,55 @@ def I : Set ℕ := Set.image2 I_fun Set.univ Set.univ
 noncomputable def P : Submonoid ((ZMod sa.p)[X]) :=
   Submonoid.closure ((fun (i : ℕ) => (X + C (i : ZMod sa.p))) '' (range (ℓ + 2)))
 
-lemma lemma_4_6' : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
+lemma introspective_np (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))) : ∀ (a : ℕ), a ≤ ℓ → introspective' sa.n (X + C (a : ZMod sa.p) : (ZMod sa.p)[X]) := by
+  let f : ZMod sa.n →+* ZMod sa.p := ZMod.castHom sa.p_dvd_n (ZMod sa.p)
+  intro a hal
+  unfold introspective'
+  have hap := h a hal
+  rw [AdjoinRoot.mk_eq_mk] at *
+  rw [dvd_iff_exists_eq_mul_left] at *
+  obtain ⟨c,hap⟩ := hap
+  have pdvdn := sa.p_dvd_n
+  rw [← sub_eq_zero] at hap
+  let φ : (ZMod sa.n)[X] →+* (ZMod sa.p)[X] := Polynomial.mapRingHom f
+  use φ c
+  rw [sub_eq_zero] at hap
+  apply_fun φ at hap
+  rw [map_sub, map_mul, map_pow, map_add] at hap
+  simp at *
+  have h₀ : φ X = X := by
+    exact Polynomial.map_X f
+  rw [h₀] at hap
+  exact hap
+
+lemma introspective_n_div_p (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))) : ∀ (a : ℕ), a ≤ ℓ → introspective' (sa.n/sa.p) (X + C (a : ZMod sa.p) : (ZMod sa.p)[X]) := by
+  intro a hal
+  have hnp := introspective_np h a hal
+  have hp : introspective' sa.p (X + C (a : ZMod sa.p) : (ZMod sa.p)[X]) := by
+    -- exact lemma_2_1 sa.p a _ sa.p_prime
+    sorry
+  unfold introspective' at *
+  have hn : sa.n = sa.p * (sa.n / sa.p) := by
+    symm
+    exact Nat.mul_div_cancel' sa.p_dvd_n
+  rw [hn, pow_mul] at hnp
+  rw [AdjoinRoot.mk_eq_mk] at *
+  rw [dvd_iff_exists_eq_mul_left] at *
+  obtain ⟨cnp,hnp⟩ := hnp
+  obtain ⟨cp,hp⟩ := hp
+  apply eq_add_of_sub_eq at hp
+  simp at *
+  sorry
+
+lemma lemma_4_6' (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]) ^ sa.n) = AdjoinRoot.mk (X ^ sa.r - 1) ((X + C (a : ZMod sa.n) : (ZMod sa.n)[X]).comp (X ^ sa.n))) : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
+  intro m hm f hf
+  unfold introspective'
+  unfold I at hm
+  simp at hm
+  obtain ⟨a,b,hm⟩ := hm
+  unfold I_fun at hm
+  unfold P at hf
+  simp at hf
   sorry
 
 end
@@ -1159,4 +1199,3 @@ theorem theorem_4_1 (n : ℕ) (ngt1 : n > 1) : n.Prime ↔ AKS_algorithm n = PRI
   constructor
   · exact lemma_4_2 n ngt1
   · exact lemma_4_9 n ngt1
-
