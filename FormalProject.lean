@@ -3,6 +3,7 @@ import Mathlib
 open Polynomial
 open Finset
 open Real
+open Nat ArithmeticFunction BigOperators Real
 
 inductive AKS_Output where
   | PRIME : AKS_Output
