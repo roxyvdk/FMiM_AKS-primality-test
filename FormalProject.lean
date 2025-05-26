@@ -127,8 +127,6 @@ lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
     --but if we have that the expression in thcoeff is zero then we have contradiction
   contradiction
 
-lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
-  sorry
 def ord_r (a n : Nat) : Option Nat :=
   if Nat.gcd a n ≠ 1 then none
   else
