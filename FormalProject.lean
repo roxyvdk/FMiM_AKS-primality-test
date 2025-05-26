@@ -1129,7 +1129,6 @@ lemma sublem_4_2_2 (n : ℕ) : n.Prime → ¬ is_not_coprime_in_range (smallest_
   rcases hcop with ⟨a,h₁⟩
   rcases h₁ with ⟨_,h₂⟩
   rcases h₂ with ⟨hgt1, hltn⟩
-
   have : n.gcd a = 1 := by
     have : ¬  n ∣ a := by
       intro ndiva
@@ -1147,18 +1146,15 @@ lemma sublem_4_2_3 (n : ℕ) (ngt1 : n > 1) : n.Prime → smallest_r n < n → �
   unfold polynomial_equality at ineq
   let a' : ℤ := ↑a
   have : (X + C (a' : ZMod n)) ^ n = X ^ n + C (a' : ZMod n) := by
-    apply (lemma_2_1 n a' ngt1).mp hp
-
+    exact (lemma_2_1 n a' ngt1).mp hp
   have heq: AdjoinRoot.mk (X^smallest_r n - C (1 : ZMod n)) (X + C (a' : ZMod n))^n = AdjoinRoot.mk (X^smallest_r n - C (1 : ZMod n)) (X^n + C (a' : ZMod n)) := by
-    apply lem_2_1_result n a' this
-
+    exact lem_2_1_result n a' this
   have : ¬(AdjoinRoot.mk (X ^ smallest_r n - C 1)) (X + C (a' : ZMod n)) ^ n = (AdjoinRoot.mk (X ^ smallest_r n - C 1)) (X ^ n + C (a' : ZMod n)) := by
     have cast_eq : (↑(↑a : ℤ) : ZMod n) = (↑a : ZMod n) := by
       norm_cast
     rw [cast_eq]
     exact ineq
   exact this heq
-
 
 lemma lemma_4_2 (n : ℕ) (ngt1 : 1 < n) : n.Prime → AKS_algorithm n = PRIME := by
   intro hp
@@ -1185,7 +1181,6 @@ lemma choose_increasing (a b c : ℕ) : b ≥ c → (a+b).choose b ≥ (a+c).cho
   rw [hb, hc]
   exact h''
 
-
 lemma floor_le_iff (a : ℝ) (z : ℕ) (h : a ≥ 0) : Nat.floor a ≤ z ↔ a < z + 1 := by
   rw [← Nat.lt_add_one_iff, Nat.floor_lt]
   · norm_cast
@@ -1202,7 +1197,6 @@ lemma choose_two_pow_bound_helper (a : ℕ) (k : ℕ) (hk : a ≥ k) : (k+a+1)>2
     _ = 2*k + 1 := by linarith
     _ > 2*k := by exact lt_add_one (2 * k)
 
-
 lemma choose_two_pow_bound (a : ℕ) (h : a > 1) : (2*a+1).choose a > 2^(a+1) := by
   -- can use the following mathematical proof:
   -- (2a+1).choose a = (2a+1)(2a)...(a+2) / (a)(a-1)...(1)
@@ -1211,8 +1205,6 @@ lemma choose_two_pow_bound (a : ℕ) (h : a > 1) : (2*a+1).choose a > 2^(a+1) :=
   -- there are a-1 of these first type of pairs, plus this last one
   -- so then get 2^(a-1) * 4 = 2^(a+1)
   sorry
-
-
 
 -- gets used in calc step 2 and in step 4
 lemma sqrt_t_gt_log_n (t n : ℕ) : √t > Real.logb 2 n := by
@@ -1223,7 +1215,6 @@ lemma sqrt_t_gt_log_n (t n : ℕ) : √t > Real.logb 2 n := by
 lemma sqrt_t_gt0 {sa : Step5Assumptions} : √ t > 0 := by
   apply Real.sqrt_pos_of_pos
   exact Nat.cast_pos'.mpr tgt0
-
 
 lemma ell_ineq  {sa : Step5Assumptions}: ℓ ≥ Nat.floor (√t * Real.logb 2 sa.n) := by
   unfold ℓ
@@ -1238,7 +1229,7 @@ lemma ell_ineq  {sa : Step5Assumptions}: ℓ ≥ Nat.floor (√t * Real.logb 2 s
       apply Nat.one_le_of_lt sa.ngt1
   exact Nat.floor_le_floor (mul_le_mul_of_nonneg_right h₁ hlog)
 
-  lemma calc_step1 (sa : Step5Assumptions) :
+lemma calc_step1 (sa : Step5Assumptions) :
   (t+ℓ).choose (t-1) ≥  (ℓ + 1 + Nat.floor ((√t) * (Real.logb 2 sa.n))).choose (Nat.floor ((√t) * (Real.logb 2 sa.n))) := by
   have hineq: t - 1 ≥ Nat.floor (Real.sqrt t * Real.logb 2 sa.n) := by
     apply (floor_le_iff _ _ _).mpr
@@ -1282,14 +1273,12 @@ lemma calc_step2 (sa : Step5Assumptions) :
 lemma calc_step3 (sa : Step5Assumptions):
   (2 * Nat.floor ((√t) * (Real.logb 2 sa.n))+1).choose (Nat.floor ((√t) * (Real.logb 2 sa.n))) >
       2 ^ ( (Nat.floor ((√t) * (Real.logb 2 sa.n))) + 1) := by
-
   have h1 : Nat.floor (Real.sqrt t * Real.logb 2 sa.n) > Nat.floor ( (Real.logb 2 sa.n)^2) := by
     calc
       Nat.floor (Real.sqrt t * Real.logb 2 sa.n) > Nat.floor (Real.logb 2 sa.n * Real.logb 2 sa.n) := by
         -- stronger statement than ≥. (Which is easy to do with sqrt_t_gt_log_n)
         sorry
       _ = Nat.floor ( (Real.logb 2 sa.n)^2) := by rw [pow_two]
-
   have : Nat.floor (Real.sqrt t * Real.logb 2 sa.n) > 1 := by
     have : Nat.floor ( (Real.logb 2 sa.n)^2 ) ≥ 1 := by
       apply (Nat.one_le_floor_iff (logb 2 ↑sa.n ^ 2)).mpr
@@ -1301,14 +1290,12 @@ lemma calc_step3 (sa : Step5Assumptions):
         · norm_num
         · norm_cast
           apply Nat.zero_lt_of_lt sa.ngt1
-
       · apply (Real.le_logb_iff_rpow_le _ _).mpr
         · simp
           apply Nat.one_le_of_lt sa.ngt1
         · norm_num
         · norm_cast
           apply Nat.zero_lt_of_lt sa.ngt1
-
     calc
       Nat.floor (Real.sqrt t * Real.logb 2 sa.n) > Nat.floor ( (Real.logb 2 sa.n)^2) := by
         exact h1
@@ -1335,22 +1322,17 @@ lemma calc_step4 (n_real t_real : ℝ) (ngt1: n_real > 1) :↑(2 ^ ( (Nat.floor 
     apply Nat.lt_floor_add_one
 
 lemma lemma_4_9_assumpts (sa : Step5Assumptions) (not_p_power: ¬perfect_power sa.n) : sa.n.Prime := by
-
   let n_real : ℝ := ↑sa.n
   let t_real : ℝ := ↑t
-
   -- part of the inequality that is entirely between naturals
   have hineq : (t+ℓ).choose (t-1) > 2 ^ ( (Nat.floor ((√t) * (Real.logb 2 sa.n))) + 1) := by
     calc
       (t+ℓ).choose (t-1) ≥  (ℓ + 1 + Nat.floor ((√t) * (Real.logb 2 n_real))).choose (Nat.floor ((√t) * (Real.logb 2 n_real))) := by
         exact calc_step1 sa
-
       _ ≥ (2 * Nat.floor ((√t) * (Real.logb 2 sa.n))+1).choose (Nat.floor ((√t) * (Real.logb 2 sa.n))) := by
         exact calc_step2 sa
-
       _ > 2 ^ ( (Nat.floor ((√t) * (Real.logb 2 sa.n))) + 1) := by
         exact calc_step3 sa
-
   -- conclusion of string of inequalities
   have card_bound : Nat.card 𝒢 > n_real^√t_real := by
     have : Nat.card 𝒢 > 2 ^ ( (Nat.floor ((√t) * (Real.logb 2 sa.n))) + 1) := by
@@ -1366,7 +1348,6 @@ lemma lemma_4_9_assumpts (sa : Step5Assumptions) (not_p_power: ¬perfect_power s
           norm_cast
           exact sa.ngt1
         exact calc_step4 n_real t_real hn
-
   have : is_power_of sa.n sa.p := by
     have : ¬is_power_of sa.n sa.p → Nat.card 𝒢 ≤ (n_real ^ √t_real) := by
       unfold n_real t_real
@@ -1420,16 +1401,13 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
     sorry
 
   rcases this with ⟨p, hp⟩
-
   -- need the assumption here that n is not prime, so that p satisfies the is_not_coprime_in_range condition (must be < n
   -- the proof is that if this were not the case, then steps 3 or 4 in the AKS algorithm would have already returned composite
   have hpr : ¬ n.Prime → p > smallest_r n := by
     intro hnotp
     by_contra p_less
     simp at p_less
-
     unfold is_not_coprime_in_range at no_a
-
     have : ∃ a ≤ smallest_r n, 1 < n.gcd a ∧ n.gcd a < n := by
       use p
       constructor
@@ -1458,15 +1436,11 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
 
   -- split into cases of n prime (in which case we are immediately done), or n not prime, in which case p > r
   have h_not_h: n.Prime ∨ ¬n.Prime := by exact Decidable.em (Nat.Prime n)
-
   cases h_not_h with
   | inl hprime => exact hprime
   | inr hnotprime =>
     have p_rel_r: p > smallest_r n := by exact hpr hnotprime
-
-    have h_rgt0 : smallest_r n > 0 := by
-      sorry
-
+    have h_rgt0 : smallest_r n > 0 := by sorry
     have h_n_gcd_r : n.gcd (smallest_r n) = 1 := by
       -- used for two of the assumptions in Step5Assumptions
       by_contra rgcd
@@ -1513,9 +1487,7 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
       h_step_5 := sorry
       hrn := sorry
     }
-
     apply lemma_4_9_assumpts sa not_perfect_power
-
 
 theorem theorem_4_1 (n : ℕ) (ngt1 : n > 1) : n.Prime ↔ AKS_algorithm n = PRIME := by
   constructor
