@@ -362,7 +362,13 @@ notation3 "⋃ᶠ "(...)", "r:60:(scoped f => Finset.biUnion' f) => r
 
 theorem card_disjoint_union [DecidableEq α] (f : ℕ → Finset α) (k : ℕ) (hp : Pairwise (fun (a₁ a₂ : ℕ) => Disjoint (f a₁) (f a₂))) :
     Finset.card (⋃ᶠ m : range k, f m) = ∑ m : range k, (f m).card := by
-  sorry
+  have hp' : ∀ x ∈ (@Finset.univ (range k) _), ∀ y ∈ (@Finset.univ (range k) _), x ≠ y → Disjoint (f x) (f y) := by
+    intro x _ y _ xney
+    have xney' : x.val ≠ y.val := by
+      contrapose! xney
+      exact Subtype.ext xney
+    exact hp xney'
+  exact Finset.card_biUnion hp'
 
 noncomputable instance (k : ℕ) : DecidableEq (SymUnion α k) := by
   exact Classical.typeDecidableEq (SymUnion α k)
