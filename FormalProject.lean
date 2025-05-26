@@ -30,9 +30,6 @@ noncomputable instance {r n : ℕ} : Decidable (is_not_coprime_in_range r n) := 
   apply Classical.propDecidable
 
 def polynomial_equality (r n a : ℕ) : Prop :=
-  (((X + C (a : ℤ))^n : ℤ[X]) : ℤ[X] ⧸ Ideal.span ({X^r - 1, C (n : ℤ)} : Set ℤ[X])) = (X^n + C (a : ℤ) : ℤ[X])
-
-def polynomial_equality' (r n a : ℕ) : Prop :=
   AdjoinRoot.mk (X^r - C (1 : ZMod n)) (X + C (a : ZMod n))^n = AdjoinRoot.mk (X^r - C (1 : ZMod n)) (X^n + C (a : ZMod n))
 
 def step_5_false (r n : ℕ) : Prop :=
@@ -1098,7 +1095,7 @@ lemma sublem_4_2_3 (n : ℕ) (ngt1 : n > 1) : n.Prime → smallest_r n < n → �
   rcases hineq with ⟨a,ha⟩
   rcases ha with ⟨_,hb⟩
   rcases hb with ⟨_,ineq⟩
-  unfold polynomial_equality' at ineq
+  unfold polynomial_equality at ineq
   let a' : ℤ := ↑a
   have : (X + C (a' : ZMod n)) ^ n = X ^ n + C (a' : ZMod n) := by
     apply (lemma_2_1 n a' ngt1).mp hp
