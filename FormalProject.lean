@@ -148,13 +148,14 @@ lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
         rw [Real.logb_pow]
         rw [Real.logb_self_eq_one h_base]
         simp
+        sorry
       -- Finish the proof
       have hlog_k : k ≤ Real.logb m_real B := by
         rw[logb_m_mk] at  hlog
         exact hlog
       have hk_floor: k ≤  Nat.floor (Real.logb m B):= by
         have k_floor: k = Nat.floor k_real := by
-          exact Eq.symm (floor_natCast k)
+          exact Eq.symm (Nat.floor_natCast k)
         rw[k_floor]
         apply Nat.floor_le_floor
         exact hlog_k
