@@ -490,12 +490,6 @@ section
 
 variable [sa : Step5Assumptions]
 
---instance : NeZero sa.p := ⟨Nat.Prime.ne_zero sa.p_prime⟩
-
---instance : NeZero sa.r := ⟨(ne_of_lt (Nat.zero_lt_of_lt rgt1)).symm⟩
-
---instance : Fact (sa.p.Prime) := ⟨sa.p_prime⟩
-
 noncomputable def Qᵣ := cyclotomic sa.r (ZMod sa.p)
 
 lemma Qᵣ_not_unit : ¬IsUnit Qᵣ := not_isUnit_of_degree_pos Qᵣ (degree_cyclotomic_pos sa.r _ sa.rgt0)
@@ -542,14 +536,6 @@ theorem X_primitive_root : IsPrimitiveRoot (AdjoinRoot.mk h X) sa.r := by
   refine Polynomial.IsRoot.dvd ?_ (Polynomial.map_dvd (AdjoinRoot.of h) (factor_dvd_of_not_isUnit Qᵣ_not_unit))
   apply AdjoinRoot.isRoot_root
 
-theorem deg_h_eq_order : h.natDegree = oᵣ sa.r sa.p := by
-  sorry
-
-lemma deg_h_gt_one : 1 < h.natDegree := deg_h_eq_order ▸ sa.hrp
-
---def G : Subgroup (ZMod sa.r)ˣ :=
---  Subgroup.closure {ZMod.unitOfCoprime sa.n sa.hn, ZMod.unitOfCoprime sa.p sa.hp}
-
 def G : Set (ZMod sa.r) := (fun (i : ℕ) => (i : ZMod sa.r)) '' I
 
 def G' : Subgroup (ZMod sa.r)ˣ :=
@@ -593,11 +579,6 @@ noncomputable def f₃ : Multiset (ZMod sa.p) → (ZMod sa.p)[X] :=
 
 noncomputable def lemma_4_7_helper_f : SymUnion (Fin (ℓ + 1)) (t - 1) → (AdjoinRoot h) :=
   (AdjoinRoot.mk h) ∘ f₃ ∘ f₂ ∘ f₁
-
-lemma prod_mk_eq_mk_prod (M : SymUnion (Fin (ℓ + 1)) (t - 1)) :
-    (Multiset.map (fun i => AdjoinRoot.mk h (X + C ((i : Fin (ℓ + 1)) : ZMod sa.p))) M).prod =
-    AdjoinRoot.mk h (Multiset.map (fun i => (X + C ((i : Fin (ℓ + 1)) : ZMod sa.p))) M).prod := by
-  simp only [map_multiset_prod, Multiset.map_map, Function.comp_apply]
 
 lemma mk_f₃_eq_f₃_mk (M : SymUnion (Fin (ℓ + 1)) (t - 1)) :
     ((AdjoinRoot.mk h) ∘ f₃ ∘ f₂ ∘ f₁) M = ((fun N => (Multiset.map (fun i => AdjoinRoot.mk h (X - C i)) N).prod) ∘ f₂ ∘ f₁) M := by
