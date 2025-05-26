@@ -422,9 +422,11 @@ def SymUnion (α : Type*) (n : ℕ) :=
   { s : Multiset α // Multiset.card s ≤ n }
 
 namespace SymUnion
--- Some lemmas, definitions and instances mimicking those from `Sym`.
+-- Some lemmas, definitions and instances mimicking those from `Sym`, `Sym'` and `Vector`.
 
 section
+
+open Mathlib (Vector)
 
 variable {α : Type*}
 
@@ -446,8 +448,83 @@ abbrev mk {n : ℕ} (m : Multiset α) (h : Multiset.card m ≤ n) : SymUnion α 
 
 @[simp, norm_cast] lemma coe_mk {n : ℕ} (s : Multiset α) (h : Multiset.card s ≤ n) : mk s h = s := rfl
 
-instance [DecidableEq α] [Fintype α] {n : ℕ} : Fintype (SymUnion α n) :=
-  sorry
+/-- `VectorUnion α n` is the type of lists of length up to `n` with elements of type `α`. -/
+def VectorUnion (α : Type*) (n : ℕ) :=
+  { l : List α // l.length ≤ n }
+
+namespace VectorUnion
+
+/-- This is the `List.Perm` setoid lifted to `Vector`.-/
+abbrev Perm.isSetoid (α : Type*) (n : ℕ) : Setoid (VectorUnion α n) :=
+  (List.isSetoid α).comap Subtype.val
+
+def finite_function (α : Type*) (n : ℕ) : VectorUnion α n → Vector (Option α) n :=
+  fun l => ⟨List.map Option.some l.val ++ List.replicate (n - l.val.length) none, by
+    simp only [List.length_append, List.length_map, List.length_replicate]
+    exact Nat.add_sub_cancel' l.prop⟩
+
+lemma finite_function_inj {n : ℕ} : Function.Injective (finite_function α n) := by
+  intro x y hxy
+  unfold finite_function at hxy
+  apply Subtype.ext
+  apply Subtype.ext_iff.mp at hxy
+  simp only at hxy
+  have x_length_eq_y_length : x.val.length = y.val.length := by
+    rw [List.ext_get_iff] at hxy
+    contrapose! hxy
+    simp only [List.length_append, List.length_map, List.length_replicate, List.get_eq_getElem]
+    intro hxyn
+    wlog x_l_gt_y_l : x.val.length > y.val.length generalizing x y
+    · rcases this hxy.symm hxyn.symm (lt_iff_le_and_ne.mpr ⟨(le_of_not_lt x_l_gt_y_l), hxy⟩) with ⟨m, ⟨hmy, hmx, h₁⟩⟩
+      use m, hmx, hmy, h₁.symm
+    use y.val.length
+    have y_length_lt_n : y.val.length < n := lt_of_lt_of_le x_l_gt_y_l x.prop
+    constructor
+    · constructor
+      · have length_rw : y.val.length = (List.map some y.val).length := by rw [List.length_map]
+        simp_rw [length_rw]
+        rw [List.getElem_append_left]
+        · simp only [List.length_map, List.getElem_replicate, List.getElem_map]
+          rw [List.getElem_append_right]
+          · simp only [List.length_map, Nat.sub_self, List.getElem_replicate, ne_eq, not_false_eq_true, reduceCtorEq]
+          · simp only [List.length_map]
+            rfl
+        · simp only [List.length_map]
+          exact x_l_gt_y_l
+      · exact (Nat.add_sub_cancel' y.prop).symm ▸ y_length_lt_n
+    · exact (Nat.add_sub_cancel' x.prop).symm ▸ y_length_lt_n
+  have replicate_eq : List.replicate (n - x.val.length) (none: Option α) = List.replicate (n - y.val.length) (none : Option α) := by
+    rw [x_length_eq_y_length]
+  rw [replicate_eq] at hxy
+  simp only [List.append_cancel_right_eq] at hxy
+  exact (Function.Injective.list_map (Option.some_injective α)) hxy
+
+instance [Fintype α] {n : ℕ} : Finite (VectorUnion α n) := by
+  exact Finite.of_injective (finite_function α n) finite_function_inj
+
+noncomputable instance fintype [Fintype α] {n : ℕ} : Fintype (VectorUnion α n) :=
+  Fintype.ofFinite _
+
+end VectorUnion
+
+/-- Another definition of the nth symmetric power, using vectors modulo permutations. (See `Sym'`.)
+-/
+def SymUnion' (α : Type*) (n : ℕ) :=
+  Quotient (VectorUnion.Perm.isSetoid α n)
+
+/-- Multisets of cardinality ≤ n are equivalent to vectors of length up to n up to permutations.
+-/
+def symUnionEquivSymUnion' {n : ℕ} : SymUnion α n ≃ SymUnion' α n :=
+  Equiv.subtypeQuotientEquivQuotientSubtype _ _ (fun _ => by rfl) fun _ _ => by rfl
+
+noncomputable local instance [Setoid α] : DecidableRel (fun (x₁ x₂ : α) => x₁ ≈ x₂) := by
+  exact Classical.decRel fun x₁ x₂ => x₁ ≈ x₂
+
+noncomputable instance [DecidableEq α] [Fintype α] {n : ℕ} : Fintype (SymUnion' α n) :=
+  Quotient.fintype _
+
+noncomputable instance [DecidableEq α] [Fintype α] {n : ℕ} : Fintype (SymUnion α n) :=
+  Fintype.ofEquiv _ symUnionEquivSymUnion'.symm
 
 def Finset.biUnion' {α β : Type*} [DecidableEq β] [Fintype α] (t : α → Finset β) : Finset β :=
   Finset.biUnion univ t
