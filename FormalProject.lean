@@ -1429,7 +1429,7 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
     have p_rel_r: p > smallest_r n := by exact hpr hnotprime
 
     have h_rgt0 : smallest_r n > 0 := by
-      sorry --TODO
+      sorry
 
     have h_n_gcd_r : n.gcd (smallest_r n) = 1 := by
       -- used for two of the assumptions in Step5Assumptions
