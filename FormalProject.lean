@@ -1468,7 +1468,7 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
       hn := h_n_gcd_r -- n.gcd r = 1
       pgtr := p_rel_r -- r < p
       p_prime := hp.left -- : p.Prime
-      hp := by -- p.gcd r = 1 -- follows from hn?
+      hp := by -- p.gcd r = 1
         have hdiv : p.gcd (smallest_r n) ∣ n.gcd (smallest_r n) := by
           apply Nat.gcd_dvd_gcd_of_dvd_left (smallest_r n) hp.right.left
         have : n.gcd (smallest_r n) = 1 := by exact h_n_gcd_r
