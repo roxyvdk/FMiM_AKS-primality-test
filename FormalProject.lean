@@ -343,6 +343,14 @@ instance hasCoe (n : ℕ) : CoeOut (SymUnion α n) (Multiset α) :=
 theorem coe_injective {n : ℕ} : Function.Injective ((↑) : SymUnion α n → Multiset α) :=
   Subtype.coe_injective
 
+/-- Construct an element of the `n`th symmetric power from a multiset of cardinality `n`.
+-/
+@[match_pattern]
+abbrev mk (m : Multiset α) (h : Multiset.card m ≤ n) : SymUnion α n :=
+  ⟨m, h⟩
+
+@[simp, norm_cast] lemma coe_mk (s : Multiset α) (h : Multiset.card s ≤ n) : mk s h = s := rfl
+
 instance [DecidableEq α] [Fintype α] {n : ℕ} : Fintype (SymUnion α n) :=
   sorry
 
@@ -360,11 +368,53 @@ noncomputable instance (k : ℕ) : DecidableEq (SymUnion α k) := by
   exact Classical.typeDecidableEq (SymUnion α k)
 
 lemma univ_split [DecidableEq α] [Fintype α] (k : ℕ) : Finset.map ⟨((↑) : SymUnion α k → Multiset α), coe_injective⟩ (@Finset.univ (SymUnion α k) _) = ⋃ᶠ (i : range (k + 1)), (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _)) := by
-  sorry
+  ext x
+  constructor
+  · intro hx
+    simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and] at hx
+    rcases hx with ⟨y, rfl⟩
+    apply Finset.mem_biUnion.mpr
+    use ⟨(Multiset.card y.toMultiset), by
+      simp only [mem_range]
+      exact Nat.lt_succ_of_le y.prop⟩
+    constructor
+    · simp only [univ_eq_attach, mem_attach]
+    · simp only [id_eq, eq_mpr_eq_cast, mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and]
+      use ⟨y.toMultiset, rfl⟩
+      simp only [Sym.coe_mk]
+  · intro hx
+    rcases Finset.mem_biUnion.mp hx with ⟨i, _, hxi⟩
+    simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and] at hxi
+    simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and]
+    rcases hxi with ⟨y, rfl⟩
+    use ⟨y, by
+      calc
+        Multiset.card y.toMultiset = i := y.prop
+        _ ≤ k := by
+          exact Nat.le_of_lt_add_one (Finset.mem_range.mp i.prop)⟩
+    simp only [coe_mk]
 
 lemma univ_disjoint [DecidableEq α] [Fintype α] (k : ℕ) : Pairwise (fun (i₁ i₂ : range (k + 1)) => Disjoint (Finset.map ⟨((↑) : Sym α i₁ → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i₁) _))
     (Finset.map ⟨((↑) : Sym α i₂ → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i₂) _))) := by
-  sorry
+  intro i₁ i₂ hi₁i₂
+  apply Finset.disjoint_iff_inter_eq_empty.mpr
+  ext x
+  constructor
+  · intro hx
+    by_contra
+    rcases Finset.mem_inter.mp hx with ⟨hxi₁, hxi₂⟩
+    simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and] at hxi₁
+    simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and] at hxi₂
+    rcases hxi₁ with ⟨y₁, hy₁⟩
+    rcases hxi₂ with ⟨y₂, hy₂⟩
+    have i₁eqi₂ : (i₁ : ℕ) = i₂ := by
+      calc
+        i₁ = Multiset.card y₁.toMultiset := y₁.prop.symm
+        _ = Multiset.card x := by rw [hy₁]
+        _ = Multiset.card y₂.toMultiset := by rw [hy₂]
+        _ = i₂ := y₂.prop
+    exact hi₁i₂ (Subtype.ext i₁eqi₂)
+  · tauto
 
 theorem card_sym_union_eq_choose [DecidableEq α] [Fintype α] [Nonempty α] (k : ℕ) :
     Fintype.card (SymUnion α k) = (Fintype.card α + k).choose k := by
@@ -390,11 +440,11 @@ theorem card_sym_union_eq_choose [DecidableEq α] [Fintype α] [Nonempty α] (k 
     _ = ∑ (i ∈ range (k + 1)), (Fintype.card α + i - 1).choose i := by
       simp_rw [Sym.card_sym_eq_choose]
     _ = ∑ (i ∈ range (k + 1)), (i + (Fintype.card α - 1)).choose (Fintype.card α - 1) := by
-      sorry
+      simp_rw [add_comm (Fintype.card α), Nat.add_sub_assoc (Nat.one_le_of_lt card_α_pos) _, @Nat.choose_symm_add _ (Fintype.card α - 1)]
     _ = (k + (Fintype.card α - 1) + 1).choose ((Fintype.card α - 1) + 1) := by
       exact Nat.sum_range_add_choose k (Fintype.card α - 1)
     _ = (Fintype.card α + k).choose k := by
-      sorry
+      rw [add_assoc, Nat.sub_add_cancel (Nat.one_le_of_lt card_α_pos), add_comm, Nat.choose_symm_add]
 
 end
 
