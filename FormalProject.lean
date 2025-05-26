@@ -94,7 +94,7 @@ lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
   simp [Int.modEq_zero_iff_dvd] at hchoose
   have not_dvd_choose : ¬ n ∣ Nat.choose n d := by sorry
   -- there must be a d sucht that this is true sorry
-  have choosediv : n ∣ Nat.choose n d := by 
+  have choosediv : n ∣ Nat.choose n d := by
     exact (ZMod.natCast_zmod_eq_zero_iff_dvd (n.choose d) n).mp hchoose
     --but if we have that the expression in hcoeff is zero then we have contradiction
   contradiction
@@ -158,9 +158,9 @@ lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
         rw[k_floor]
         apply Nat.floor_le_floor
         exact hlog_k
-      exact hk_floor 
+      exact hk_floor
     let k := Nat.floor (Real.logb 2 B)
-    let C := n ^ k - 1 
+    let C := n ^ k - 1
     have hk : 0 < k := sorry
     have C_ne_one : C ≠ 1 := sorry
     obtain ⟨p, hp_prime, hp_dvd⟩ :=  Nat.exists_prime_and_dvd C_ne_one
@@ -171,7 +171,7 @@ lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
 
     use r
     constructor
-    · exact le_sup_of_le_right hrB 
+    · exact le_sup_of_le_right hrB
     · exact h_ord
 
 
@@ -223,6 +223,24 @@ lemma no_zero_div : NoZeroDivisors (ZMod sa.p) := by
   have : Fact sa.p.Prime := ⟨sa.p_prime⟩
   exact inferInstance
 
+lemma xr_dvd_xrq : ∀ q : ℕ, ((X ^ sa.r + C (-1 : (ZMod sa.p))) : (ZMod sa.p)[X]) ∣ ((X^(q * sa.r) + C (-1 : (ZMod sa.p))) : (ZMod sa.p)[X]) := by
+    intro q
+    let f : (ZMod sa.p)[X] := X ^ sa.r - 1
+    let g : (ZMod sa.p)[X] := ∑ i ∈ Finset.range q, X ^ (i * sa.r)
+    have : f * g = X ^ (q * sa.r) + C (-1) := by
+      simp only [f, g, ← C_1, ← sub_eq_add_neg]
+      have : (∑ i ∈ Finset.range q, (X : (ZMod sa.p)[X]) ^ (i * sa.r)) = (∑ i ∈ Finset.range q, (X ^ sa.r) ^ i) := by
+        apply Finset.sum_congr rfl
+        intro i _
+        rw [pow_mul]
+        ring
+      simp
+      rw [this, mul_geom_sum, ← pow_mul, mul_comm]
+      simp [Mathlib.Tactic.RingNF.add_neg]
+    use g
+    simp [Mathlib.Tactic.RingNF.add_neg] at *
+    rw [← this]
+
 lemma introspec_pow (f : (ZMod sa.p)[X]) (m : ℕ) : (introspective' m f) → ∀ q : ℕ,
   AdjoinRoot.mk (X^(q*sa.r) - 1) ((f.comp (X ^ q)) ^ m) = AdjoinRoot.mk (X^(q*sa.r) - 1) (f.comp (Polynomial.X ^(m*q))) := by
   intro hm q
@@ -250,22 +268,7 @@ lemma lemma_4_5' (m m' : ℕ) (f : (ZMod sa.p)[X]) (hm : introspective' m f) (hm
   unfold introspective' at *
   simp at *
   rw [pow_mul,hm]
-  have xr_dvd_xmr : ((X ^ sa.r + C (-1 : (ZMod sa.p))) : (ZMod sa.p)[X]) ∣ ((X^(m * sa.r) + C (-1 : (ZMod sa.p))) : (ZMod sa.p)[X]) := by
-    let f : (ZMod sa.p)[X] := X ^ sa.r - 1
-    let g : (ZMod sa.p)[X] := ∑ i ∈ Finset.range m, X ^ (i * sa.r)
-    have : f * g = X ^ (m * sa.r) + C (-1) := by
-      simp only [f, g, ← C_1, ← sub_eq_add_neg]
-      have : (∑ i ∈ Finset.range m, (X : (ZMod sa.p)[X]) ^ (i * sa.r)) = (∑ i ∈ Finset.range m, (X ^ sa.r) ^ i) := by
-        apply Finset.sum_congr rfl
-        intro i _
-        rw [pow_mul]
-        ring
-      simp
-      rw [this, mul_geom_sum, ← pow_mul, mul_comm]
-      simp [Mathlib.Tactic.RingNF.add_neg]
-    use g
-    simp [Mathlib.Tactic.RingNF.add_neg] at *
-    rw [← this]
+  have xr_dvd_xmr := xr_dvd_xrq m
   simp [Mathlib.Tactic.RingNF.add_neg] at xr_dvd_xmr
   apply quot_prod _ _ _ _ xr_dvd_xmr at hmm'
   rw [mul_comm m m']
@@ -309,6 +312,7 @@ lemma introspective_n_div_p (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^
   have hp : introspective' sa.p (X + C (a : ZMod sa.p) : (ZMod sa.p)[X]) := by
     -- exact lemma_2_1 sa.p a _ sa.p_prime
     sorry
+  have hp_np := introspec_pow (X + C (a : ZMod sa.p)) sa.p hp (sa.n/sa.p)
   unfold introspective' at *
   have hn : sa.n = sa.p * (sa.n / sa.p) := by
     symm
@@ -318,8 +322,26 @@ lemma introspective_n_div_p (h : ∀ (a : ℕ), a ≤ ℓ → AdjoinRoot.mk (X ^
   rw [dvd_iff_exists_eq_mul_left] at *
   obtain ⟨cnp,hnp⟩ := hnp
   obtain ⟨cp,hp⟩ := hp
-  apply eq_add_of_sub_eq at hp
+  obtain ⟨cc,hp_np⟩ := hp_np
+  apply eq_add_of_sub_eq at hnp
+  rw [add_comm (cnp * (X ^sa.r - 1)) _] at hnp
+  apply sub_eq_of_eq_add at hnp
+  rw [← hnp, pow_right_comm] at hp_np
+  symm at hp_np
+  apply dvd_of_mul_left_eq at hp_np
+  rw [← AdjoinRoot.mk_eq_mk] at hp_np
+  have xr_dvd_xnpr := xr_dvd_xrq (sa.n/sa.p)
   simp at *
+  apply quot_prod _ _ _ _ xr_dvd_xnpr at hp_np
+  rw [AdjoinRoot.mk_eq_mk] at hp_np
+  rw [dvd_iff_exists_eq_mul_left] at hp_np
+  simp at hp_np
+  obtain ⟨ccc,hp_np⟩ := hp_np
+  simp [Mathlib.Tactic.RingNF.add_neg] at hp_np
+  apply eq_add_of_sub_eq at hp_np
+  rw [add_comm (ccc * (X ^ sa.r - 1)) _, sub_add_eq_add_sub, ← add_sub] at hp_np
+  apply sub_eq_of_eq_add' at hp_np
+  rw [← sub_mul] at hp_np
   sorry
 
 lemma lemma_4_6' : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
@@ -331,6 +353,7 @@ lemma lemma_4_6' : ∀ m ∈ I, ∀ f ∈ P, introspective' m f := by
   unfold I_fun at hm
   unfold P at hf
   simp at hf
+  -- We want to use lemma_4_5 and lemma_4_6 to get to the desired conclusion
   sorry
 
 end
