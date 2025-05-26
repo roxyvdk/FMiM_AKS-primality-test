@@ -1186,9 +1186,7 @@ lemma ell_ineq  {sa : Step5Assumptions}: ℓ ≥ Nat.floor (√t * Real.logb 2 s
     · norm_num
     · norm_cast
       apply Nat.one_le_of_lt sa.ngt1
-  have ineq : Real.sqrt sa.r.totient * Real.logb 2 sa.n ≥ Real.sqrt t * Real.logb 2 sa.n := by
-    exact mul_le_mul_of_nonneg_right h₁ hlog
-  exact Nat.floor_le_floor ineq
+  exact Nat.floor_le_floor (mul_le_mul_of_nonneg_right h₁ hlog)
 
   lemma calc_step1 (sa : Step5Assumptions) :
   (t+ℓ).choose (t-1) ≥  (ℓ + 1 + Nat.floor ((√t) * (Real.logb 2 sa.n))).choose (Nat.floor ((√t) * (Real.logb 2 sa.n))) := by
@@ -1200,9 +1198,9 @@ lemma ell_ineq  {sa : Step5Assumptions}: ℓ ≥ Nat.floor (√t * Real.logb 2 s
       rw [pow_two]
       apply mul_lt_mul_of_pos_right
       · exact sqrt_t_gt_log_n t sa.n
-      · exact sqrt_t_gt0 sa
+      · exact sqrt_t_gt0
     · rw [mul_comm]
-      apply (mul_nonneg_iff_of_pos_right (sqrt_t_gt0 sa)).mpr
+      apply (mul_nonneg_iff_of_pos_right sqrt_t_gt0).mpr
       apply Real.logb_nonneg
       · linarith
       · norm_cast
@@ -1225,7 +1223,7 @@ lemma calc_step2 (sa : Step5Assumptions) :
   have he: ℓ + 1 + Nat.floor (√t * Real.logb 2 n_real) ≥  Nat.floor (√t * Real.logb 2 n_real) + (1 + Nat.floor (√t * Real.logb 2 n_real)) := by
     rw [add_assoc]
     apply Nat.add_le_add_right
-    exact ell_ineq sa
+    exact ell_ineq
   have : Nat.floor (√t * Real.logb 2 n_real) + (1 + Nat.floor (√t * Real.logb 2 n_real))  = (2 * Nat.floor ((√t) * (Real.logb 2 n_real))+1) := by
     ring_nf
   rw [←this]
@@ -1269,8 +1267,6 @@ lemma calc_step3 (sa : Step5Assumptions):
   exact choose_two_pow_bound (Nat.floor (Real.sqrt t * Real.logb 2 sa.n)) this
 
 lemma calc_step4 (n_real t_real : ℝ) (ngt1: n_real > 1) :↑(2 ^ ( (Nat.floor ((√t_real) * (Real.logb 2 n_real))) + 1)) ≥ n_real ^ √t_real := by
-  have : ↑((Nat.floor ((√t_real) * (Real.logb 2 n_real))) + 1) > ((√t_real) * (Real.logb 2 n_real)) := by
-      exact Nat.lt_succ_floor (√t_real * logb 2 n_real)
   have : (2:ℝ)^((√t_real) * (Real.logb (2:ℝ) n_real)) = (n_real)^√t_real := by
     rw [mul_comm, Real.rpow_mul, Real.rpow_logb]
     · norm_num
@@ -1304,14 +1300,6 @@ lemma lemma_4_9_assumpts (sa : Step5Assumptions) (not_p_power: ¬perfect_power s
 
       _ > 2 ^ ( (Nat.floor ((√t) * (Real.logb 2 sa.n))) + 1) := by
         exact calc_step3 sa
-
-  have : ↑(2 ^ ( (Nat.floor ((√t) * (Real.logb 2 sa.n))) + 1)) ≥ n_real ^ √t_real := by
-    have : n_real > 1 := by
-      unfold n_real
-      norm_cast
-      exact sa.ngt1
-    exact calc_step4 n_real t_real this
-
 
   -- conclusion of string of inequalities
   have card_bound : Nat.card 𝒢 > n_real^√t_real := by
@@ -1408,10 +1396,8 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
             have : n ≥ n.gcd p := by
               apply Nat.gcd_le_left p
               exact Nat.zero_lt_of_lt ngt1
-            have : n = n.gcd p := by
-              exact Nat.le_antisymm heq this
             have : n ∣ p := by
-              rw [this]
+              rw [Nat.le_antisymm heq this]
               apply Nat.gcd_dvd_right
             apply Nat.dvd_antisymm this hp.right.left
           have : n.Prime := by
@@ -1471,8 +1457,7 @@ lemma lemma_4_9 (n : ℕ) (ngt1 : n > 1) : AKS_algorithm n = PRIME → n.Prime :
       hp := by -- p.gcd r = 1
         have hdiv : p.gcd (smallest_r n) ∣ n.gcd (smallest_r n) := by
           apply Nat.gcd_dvd_gcd_of_dvd_left (smallest_r n) hp.right.left
-        have : n.gcd (smallest_r n) = 1 := by exact h_n_gcd_r
-        rw [this] at hdiv
+        rw [h_n_gcd_r] at hdiv
         exact Nat.eq_one_of_dvd_one hdiv
       p_dvd_n := hp.right.left -- : p ∣ n
       h_step_5 := sorry
