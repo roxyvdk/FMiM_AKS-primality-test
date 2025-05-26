@@ -3,7 +3,6 @@ import Mathlib
 open Polynomial
 open Finset
 open Real
-open Nat ArithmeticFunction BigOperators Real
 
 inductive AKS_Output where
   | PRIME : AKS_Output
@@ -133,6 +132,9 @@ def ord_r (a n : Nat) : Option Nat :=
     let ks := List.range (n+1) |>.drop 1
     ks.find? (λ k => a.pow k % n == 1)
 
+section
+
+open Nat
 
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
   ∃ r : ℕ, r ≤ max 3 (Nat.ceil ((Real.logb 2 n) ^ 5)) ∧ (ord_r n r).getD 0 > (Real.logb 2 n) ^ 2 := by
@@ -216,7 +218,7 @@ lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
     · exact le_sup_of_le_right hrB 
     · exact h_ord
 
-
+end
 
 class Step5Assumptions where
   r : ℕ
