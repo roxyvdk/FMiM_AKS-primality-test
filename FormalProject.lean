@@ -1045,7 +1045,6 @@ section
 
 open Lemma78
 
-variable (sa : Step5Assumptions)
 
 lemma lem_2_1_result (n : ℕ) (a : ℤ) (h : (X + C (a : ZMod n)) ^ n = X ^ n + C (a : ZMod n)):
     AdjoinRoot.mk (X^r - C (1 : ZMod n)) (X + C (a : ZMod n))^n = AdjoinRoot.mk (X^r - C (1 : ZMod n)) (X^n + C (a : ZMod n)) := by
@@ -1171,12 +1170,12 @@ lemma sqrt_t_gt_log_n (t n : ℕ) : √t > Real.logb 2 n := by
   -- or(n) > log^2 n is by definition of or(n)
   sorry
 
-lemma sqrt_t_gt0 : √ t > 0 := by
+lemma sqrt_t_gt0 {sa : Step5Assumptions} : √ t > 0 := by
   apply Real.sqrt_pos_of_pos
   exact Nat.cast_pos'.mpr tgt0
 
 
-lemma ell_ineq: ℓ ≥ Nat.floor (√t * Real.logb 2 sa.n) := by
+lemma ell_ineq  {sa : Step5Assumptions}: ℓ ≥ Nat.floor (√t * Real.logb 2 sa.n) := by
   unfold ℓ
   have : sa.r.totient ≥ t := by sorry
   have h₁ : Real.sqrt (sa.r.totient) ≥ Real.sqrt t := by
