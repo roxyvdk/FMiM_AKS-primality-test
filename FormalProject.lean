@@ -1209,11 +1209,19 @@ lemma choose_two_pow_bound (a : ℕ) (h : a > 1) : (2*a+1).choose a > 2^(a+1) :=
   -- so then get 2^(a-1) * 4 = 2^(a+1)
   sorry
 
--- gets used in calc step 2 and in step 4
-lemma sqrt_t_gt_log_n (t n : ℕ) : √t > Real.logb 2 n := by
-  -- since or (n) > log^2 n, t > log^2 n.
-  -- or(n) > log^2 n is by definition of or(n)
-  sorry
+-- gets used in calc step 1 and 3
+lemma sqrt_t_gt_log_n {sa : Step5Assumptions}: √t > Real.logb 2 sa.n := by
+  have ha : t ≥ oᵣ sa.r sa.n := by
+    sorry
+  have hb : oᵣ sa.r sa.n > (Real.logb 2 sa.n)^2 := by
+    apply sa.hrn
+  have : t > (Real.logb 2 sa.n)^2 := by
+    calc
+      ↑t ≥ ↑(oᵣ sa.r sa.n) := by
+        norm_cast
+      _ > (Real.logb 2 sa.n)^2 := by
+        norm_cast
+  exact lt_sqrt_of_sq_lt this
 
 lemma sqrt_t_gt0 {sa : Step5Assumptions} : √ t > 0 := by
   apply Real.sqrt_pos_of_pos
@@ -1241,7 +1249,7 @@ lemma calc_step1 (sa : Step5Assumptions) :
       nth_rw 2 [←Real.sq_sqrt (Nat.cast_nonneg' t)]
       rw [pow_two]
       apply mul_lt_mul_of_pos_right
-      · exact sqrt_t_gt_log_n t sa.n
+      · exact sqrt_t_gt_log_n
       · exact sqrt_t_gt0
     · rw [mul_comm]
       apply (mul_nonneg_iff_of_pos_right sqrt_t_gt0).mpr
@@ -1258,7 +1266,6 @@ lemma calc_step1 (sa : Step5Assumptions) :
   rw [this]
   apply choose_increasing
   exact hineq
-
 
 lemma calc_step2 (sa : Step5Assumptions) :
   (ℓ + 1 + Nat.floor ((√t) * (Real.logb 2 sa.n))).choose (Nat.floor ((√t) * (Real.logb 2 sa.n))) ≥
