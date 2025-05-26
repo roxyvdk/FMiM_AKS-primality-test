@@ -49,7 +49,7 @@ lemma C_power {R : Type*} [Semiring R] (a : R) (n : ℕ) : C (a ^ n) = (C a) ^ n
   | zero => simp [pow_zero]  -- Base case
   | succ d hd =>             -- Inductive step
     rw [pow_succ, pow_succ, C_mul, hd]
--- still a work in progress
+
 lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
     Nat.Prime n ↔ (X + C (a : ZMod n)) ^ n = X ^ n + C (a : ZMod n) := by
   constructor
@@ -63,46 +63,117 @@ lemma lemma_2_1 (n : ℕ) (a : ℤ) (hn : 2 ≤ n) :
   have h_const : (C (a : ZMod n)) ^ n = C (a : ZMod n) := by
     rw [ ← C_power, Polynomial.C_inj, ZMod.pow_card]
    -- ZMod.pow_card a
-
-  -- Replace the constant term with the simplified form
   rw [h_const]
 
+  -- Converse: if the polynomial holds, then n is prime
+  intro hpoly
+  by_contra hnotprime
+  obtain ⟨d, hd1, hd2, hdiv⟩ := Nat.exists_dvd_of_not_prime2 hn hnotprime
+  -- Look at the coefficient of X^d
 
--- ←
-  let f:= (X+C (a: ZMod n))^n
-  let g:= X^n + C (a: ZMod n)
--- f-g = (n choose k)
-
-  let q := Nat.minFac n
-  let k:= n.factorization q
---simp[nat.minFac_dvd, Nat.not_prime_iff_minFac_lt]
-  have hlt : q < n := by
-    rw[hnotprime, Nat.not_prime_iff_minFac]
-  have hpow : q ^ k ∣ n :=by
-    apply pow_multiplicity_dvd_factorization
-  have hmult : multiplicity q (Nat.choose n q) = multiplicity q n - multiplicity q q -
-  multiplicity q (n - q)
-  apply  Nat.Prime_multiplicity_choose_aux q n q hq (Nat.zero_lt_of_lt hlt) hlt
-
-  have coeff_q_zero : (Nat.choose n q : ZMod n) = 0 := by
-      have := congr_arg (fun P => coeff P q) (hpoly)
-      simp [coeff_add, coeff_sub, coeff_X_pow, coeff_C, coeff_add_pow,
-            if_neg (ne_of_lt hlt).symm, sub_eq_zero] at this
-      exact this
-
-  have coeff_q_zero : (Nat.choose n q : ZMod n) = 0 := by
-      have := congr_arg (fun P => coeff P q) (hpoly)
-      simp [coeff_add, coeff_sub, coeff_X_pow, coeff_C, coeff_add_pow
-            if_neg (ne_of_lt hlt).symm, sub_eq_zero] at this
-      exact this
-
-
-
+  have hcoeff : coeff ((X + C (a : ZMod n)) ^ n) d = (a : ZMod n) ^ (n - d) * (Nat.choose n d : ZMod n) := by
+    apply Polynomial.coeff_X_add_C_pow
+  have hcoeff_rhs : coeff (X ^ n + C (a : ZMod n)) d =(if d = n then 1 else 0)   + (if d = 0 then (a : ZMod n) else 0) := by
+    simp [Polynomial.coeff_add, Polynomial.coeff_X_pow, Polynomial.coeff_C, hd1, hd2]
+    rw [← Polynomial.coeff_C]
+    rfl
+  rw [hpoly] at hcoeff
+  rw [hcoeff_rhs] at hcoeff
+  have hd0 : d ≠ 0 := by linarith [hd2]
+  have hdl0: d>0 := by linarith[hd2]
+  have hdn : d ≠ n := by linarith [hd2]
+  have hddn: d ≤ n-1 := sorry
+  have hdd: 1 ≤ d := by linarith [hd2]
+  rw [if_neg hdn, if_neg hd0] at hcoeff
+  let a := (1 : ZMod n)
+  rw[add_zero, eq_comm] at hcoeff
+  have a_pow_nonzero : a ^ (n - d) = 1 := by
+    exact one_pow (n - d)
+  have d_in_range : 2 ≤ d ∧ d ≤ n - 1 := ⟨hd2, hddn⟩
+  have hchoose : (Nat.choose n d : ZMod n) = 0 := by sorry
+  simp [Int.modEq_zero_iff_dvd] at hchoose
+  have not_dvd_choose : ¬ n ∣ Nat.choose n d := by sorry
+  -- there must be a d sucht that this is true sorry
+  have choosediv : n ∣ Nat.choose n d := by 
+    exact (ZMod.natCast_zmod_eq_zero_iff_dvd (n.choose d) n).mp hchoose
+    --but if we have that the expression in hcoeff is zero then we have contradiction
+  contradiction
 lemma lem3_1 (n : ℕ) (hn : 7 ≤ n) : 4 ^ n ≤ (erase (range n) 0).lcm id := by
   sorry
+def ord_r (a n : Nat) : Option Nat :=
+  if Nat.gcd a n ≠ 1 then none
+  else
+    let ks := List.range (n+1) |>.drop 1
+    ks.find? (λ k => a.pow k % n == 1)
+
 
 lemma lemma_4_3 (n : ℕ) (h : 2 ≤ n) :
-    ∃ r : ℕ, r ≤ max 3 ⌈(logb 2 n)^5⌉₊ ∧ oᵣ r n > (logb 2 n)^2 := sorry
+  ∃ r : ℕ, r ≤ max 3 (Nat.ceil ((Real.logb 2 n) ^ 5)) ∧ (ord_r n r).getD 0 > (Real.logb 2 n) ^ 2 := by
+  by_cases hn : n = 2
+  · -- Case: n = 2
+    use 3
+    have log_eq : Real.logb 2 2 = 1 := by simp
+    have gcd_eq : Nat.gcd 2 3 = 1 := by norm_num
+    have order_2_mod_3 : ord_r 2 3 = some 2 := by native_decide
+    simp only [hn, log_eq, order_2_mod_3]
+    norm_num
+  · -- Case: n > 2
+    let B := Nat.ceil ((Real.logb 2 n) ^ 5)
+
+
+  -- Highlighted (from image): The largest value of k for any m^k ≤ B, m ≥ 2, is ⌊logₘ B⌋.
+    have log_power_bound :
+      ∀ m : ℕ, 2 ≤ m → ∀ k : ℕ, m ^ k ≤ B → k ≤ Nat.floor (Real.logb m B) := by
+      intros m hm k hk
+      have h_base : 1 < (m : ℝ) := by exact_mod_cast Nat.lt_of_lt_of_le (by norm_num) hm
+      -- Take logs: log m (m^k) ≤ log m B, so k ≤ log m B
+      have hB_pos : 0 < (B : ℝ) := by
+        have logn_pos : 0 < Real.logb 2 n := Real.logb_pos (by norm_num) (by exact_mod_cast lt_of_lt_of_le (by norm_num) h)
+        have logn5_pos := pow_pos logn_pos 5
+        exact_mod_cast Nat.ceil_pos.mpr logn5_pos
+       -- m^k > 0
+
+      have hmk_pos : 0 < (m : ℝ) ^ k := pow_pos (by linarith) k
+      have hk_real : (m : ℝ) ^ k ≤ B := by exact_mod_cast hk
+      have hm_pos : 0 < (m : ℝ) := by positivity
+      let m_real : ℝ := ↑m
+      let k_real : ℝ := ↑k
+
+      -- Apply log inequality
+      have hm_ne_one : (m : ℝ) ≠ 1 := by exact_mod_cast (ne_of_gt h_base)
+      have hlog := (Real.logb_le_logb h_base hmk_pos hB_pos).mpr hk_real
+      -- have hlog := Real.logb_le_logb h_base hmk_pos hB_pos hk_real
+        -- Simplify logb m (m^k) = k
+      have logb_m_mk : Real.logb m_real (m_real ^ k) = k := by
+        rw [Real.logb_pow]
+        rw [Real.logb_self_eq_one h_base]
+        simp
+      -- Finish the proof
+      have hlog_k : k ≤ Real.logb m_real B := by
+        rw[logb_m_mk] at  hlog
+        exact hlog
+      have hk_floor: k ≤  Nat.floor (Real.logb m B):= by
+        have k_floor: k = Nat.floor k_real := by
+          exact Eq.symm (floor_natCast k)
+        rw[k_floor]
+        apply Nat.floor_le_floor
+        exact hlog_k
+      exact hk_floor 
+    let k := Nat.floor (Real.logb 2 B)
+    let C := n ^ k - 1 
+    have hk : 0 < k := sorry
+    have C_ne_one : C ≠ 1 := sorry
+    obtain ⟨p, hp_prime, hp_dvd⟩ :=  Nat.exists_prime_and_dvd C_ne_one
+  -- Nat.isLeast_find
+    have exists_r : ∃ r ≤ B, (ord_r n r).getD 0 > (Real.logb 2 n) ^ 2 := sorry
+
+    obtain ⟨r, hrB, h_ord⟩ := exists_r
+
+    use r
+    constructor
+    · exact le_sup_of_le_right hrB 
+    · exact h_ord
+
 
 class Step5Assumptions where
   r : ℕ
