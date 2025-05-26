@@ -346,10 +346,10 @@ theorem coe_injective {n : ℕ} : Function.Injective ((↑) : SymUnion α n → 
 /-- Construct an element of the `n`th symmetric power from a multiset of cardinality `n`.
 -/
 @[match_pattern]
-abbrev mk (m : Multiset α) (h : Multiset.card m ≤ n) : SymUnion α n :=
+abbrev mk {n : ℕ} (m : Multiset α) (h : Multiset.card m ≤ n) : SymUnion α n :=
   ⟨m, h⟩
 
-@[simp, norm_cast] lemma coe_mk (s : Multiset α) (h : Multiset.card s ≤ n) : mk s h = s := rfl
+@[simp, norm_cast] lemma coe_mk {n : ℕ} (s : Multiset α) (h : Multiset.card s ≤ n) : mk s h = s := rfl
 
 instance [DecidableEq α] [Fintype α] {n : ℕ} : Fintype (SymUnion α n) :=
   sorry
@@ -360,12 +360,15 @@ def Finset.biUnion' {α β : Type*} [DecidableEq β] [Fintype α] (t : α → Fi
 -- Similar to Set.iUnion notation.
 notation3 "⋃ᶠ "(...)", "r:60:(scoped f => Finset.biUnion' f) => r
 
-theorem card_disjoint_union {α β : Type*} [Fintype α] [DecidableEq β] (f : α → Finset β) (hp : Pairwise (fun (a₁ a₂ : α) => Disjoint (f a₁) (f a₂))) :
-    Finset.card (⋃ᶠ m : α, f m) = ∑ m, (f m).card := by
+theorem card_disjoint_union [DecidableEq α] (f : ℕ → Finset α) (k : ℕ) (hp : Pairwise (fun (a₁ a₂ : ℕ) => Disjoint (f a₁) (f a₂))) :
+    Finset.card (⋃ᶠ m : range k, f m) = ∑ m : range k, (f m).card := by
   sorry
 
 noncomputable instance (k : ℕ) : DecidableEq (SymUnion α k) := by
   exact Classical.typeDecidableEq (SymUnion α k)
+
+def univ_helper_f [Fintype α] [DecidableEq α] : ℕ → Finset (Multiset α) :=
+  fun i => (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _))
 
 lemma univ_split [DecidableEq α] [Fintype α] (k : ℕ) : Finset.map ⟨((↑) : SymUnion α k → Multiset α), coe_injective⟩ (@Finset.univ (SymUnion α k) _) = ⋃ᶠ (i : range (k + 1)), (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _)) := by
   ext x
@@ -394,8 +397,7 @@ lemma univ_split [DecidableEq α] [Fintype α] (k : ℕ) : Finset.map ⟨((↑) 
           exact Nat.le_of_lt_add_one (Finset.mem_range.mp i.prop)⟩
     simp only [coe_mk]
 
-lemma univ_disjoint [DecidableEq α] [Fintype α] (k : ℕ) : Pairwise (fun (i₁ i₂ : range (k + 1)) => Disjoint (Finset.map ⟨((↑) : Sym α i₁ → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i₁) _))
-    (Finset.map ⟨((↑) : Sym α i₂ → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i₂) _))) := by
+lemma univ_disjoint [DecidableEq α] [Fintype α] : Pairwise (fun (i₁ i₂ : ℕ) => Disjoint (@univ_helper_f α _ _ i₁) (@univ_helper_f α _ _ i₂)) := by
   intro i₁ i₂ hi₁i₂
   apply Finset.disjoint_iff_inter_eq_empty.mpr
   ext x
@@ -403,17 +405,18 @@ lemma univ_disjoint [DecidableEq α] [Fintype α] (k : ℕ) : Pairwise (fun (i�
   · intro hx
     by_contra
     rcases Finset.mem_inter.mp hx with ⟨hxi₁, hxi₂⟩
+    unfold univ_helper_f at *
     simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and] at hxi₁
     simp only [mem_map, mem_univ, Function.Embedding.coeFn_mk, true_and] at hxi₂
     rcases hxi₁ with ⟨y₁, hy₁⟩
     rcases hxi₂ with ⟨y₂, hy₂⟩
-    have i₁eqi₂ : (i₁ : ℕ) = i₂ := by
+    have i₁eqi₂ : i₁ = i₂ := by
       calc
         i₁ = Multiset.card y₁.toMultiset := y₁.prop.symm
         _ = Multiset.card x := by rw [hy₁]
         _ = Multiset.card y₂.toMultiset := by rw [hy₂]
         _ = i₂ := y₂.prop
-    exact hi₁i₂ (Subtype.ext i₁eqi₂)
+    exact hi₁i₂ i₁eqi₂
   · tauto
 
 theorem card_sym_union_eq_choose [DecidableEq α] [Fintype α] [Nonempty α] (k : ℕ) :
@@ -427,7 +430,7 @@ theorem card_sym_union_eq_choose [DecidableEq α] [Fintype α] [Nonempty α] (k 
     _ = Finset.card (⋃ᶠ (i : range (k + 1)), (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _))) := by
       rw [univ_split]
     _ = ∑ (i : range (k + 1)), Finset.card (Finset.map ⟨((↑) : Sym α i → Multiset α), Sym.coe_injective⟩ (@Finset.univ (Sym α i) _)) := by
-      exact card_disjoint_union _ (univ_disjoint k)
+      exact @card_disjoint_union (Multiset α) _ univ_helper_f (k + 1) univ_disjoint
     _ = ∑ (i : range (k + 1)), Finset.card (@Finset.univ (Sym α i) _) := by
       simp only [card_map]
     _ = ∑ (i : range (k + 1)), Fintype.card (Sym α i) := by
